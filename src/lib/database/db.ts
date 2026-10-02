@@ -1,13 +1,14 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
+import { getDatabaseConfig, hasDatabaseEnv } from '@/lib/database/config';
 
-// Configuration from environment variables
-const DB_HOST = process.env.DB_HOST || (process.env.NODE_ENV === 'production' ? '' : 'localhost');
-const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
-const DB_USER = process.env.DB_USER || (process.env.NODE_ENV === 'production' ? '' : 'root');
-const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'daily_attendance';
-const HAS_MYSQL_ENV = Boolean(process.env.DB_HOST || process.env.DB_USER || process.env.DB_PORT || process.env.DB_PASSWORD || process.env.DB_NAME);
+const databaseConfig = getDatabaseConfig();
+const DB_HOST = databaseConfig.host;
+const DB_PORT = databaseConfig.port;
+const DB_USER = databaseConfig.user;
+const DB_PASSWORD = databaseConfig.password;
+const DB_NAME = databaseConfig.database;
+const HAS_MYSQL_ENV = hasDatabaseEnv();
 const USE_LOCAL_DATA =
   String(process.env.NO_DATABASE || process.env.USE_LOCAL_DATA || '').toLowerCase() === 'true' ||
   (!HAS_MYSQL_ENV && process.env.NODE_ENV !== 'production');

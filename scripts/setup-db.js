@@ -8,7 +8,7 @@ async function setup() {
   const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
   const DB_USER = process.env.DB_USER || 'root';
   const DB_PASSWORD = process.env.DB_PASSWORD || '';
-  const DB_NAME = process.env.DB_NAME || 'daily_attendance';
+  const DB_NAME = process.env.DB_NAME || 'heidiq';
 
   console.log('🔄 Connecting to MySQL at', `${DB_HOST}:${DB_PORT}...`);
 
@@ -34,10 +34,11 @@ async function setup() {
       multipleStatements: true,
     });
 
-    const sqlPath = path.join(__dirname, 'daily_attendance.sql');
+    const preferredSqlFiles = ['heidiq.sql', 'daily_attendance.sql'];
+    const sqlPath = preferredSqlFiles.map((fileName) => path.join(__dirname, fileName)).find((candidate) => fs.existsSync(candidate)) || path.join(__dirname, 'heidiq.sql');
     if (fs.existsSync(sqlPath)) {
       const sqlDump = fs.readFileSync(sqlPath, 'utf8');
-      console.log('📝 Importing SQL dump from scripts/daily_attendance.sql...');
+      console.log(`📝 Importing SQL dump from ${path.relative(process.cwd(), sqlPath)}...`);
       const tablesToDrop = ['chat_messages', 'chat_group_members', 'chat_groups', 'attendance', 'password_reset_tokens', 'users'];
       for (const table of tablesToDrop) {
         await db.query(`DROP TABLE IF EXISTS \`${table}\`;`);

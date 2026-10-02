@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Koneksi database MySQL gagal. Pastikan layanan MySQL (Laragon/XAMPP) sudah aktif di port 3306.',
+          error: 'Koneksi database gagal. Periksa nilai DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, dan DB_NAME di environment Vercel/server.',
         },
         { status: 503 }
       );

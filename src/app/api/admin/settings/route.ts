@@ -23,10 +23,10 @@ export async function GET() {
       appName: process.env.NEXT_PUBLIC_APP_NAME || 'Daily Attendance',
       appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://your-vercel-app.vercel.app',
       database: {
-        host: process.env.DB_HOST || 'your-db-host',
+        host: process.env.DB_HOST ? 'configured' : 'not-configured',
         port: process.env.DB_PORT || '3306',
         name: process.env.DB_NAME || 'daily_attendance',
-        user: process.env.DB_USER || 'your-db-user',
+        user: process.env.DB_USER ? 'configured' : 'not-configured',
       },
       email: {
         host: process.env.EMAIL_HOST || 'smtp.mailtrap.io',
