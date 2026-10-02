@@ -1,0 +1,169 @@
+import { NextResponse } from 'next/server';
+import { getSessionUser, comparePassword, hashPassword } from '@/lib/auth/auth';
+import { query } from '@/lib/database/db';
+import { User } from '@/types';
+
+export async function GET() {
+  try {
+    const session = await getSessionUser();
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Akses ditolak. Izin Administrator diperlukan.' },
+        { status: 403 }
+      );
+    }
+
+    // Return system environment metadata and admin profile
+    const users = await query<User[]>(
+      'SELECT id, username, email, role, status, created_at FROM users WHERE id = ?',
+      [session.id]
+    );
+
+    const config = {
+      appName: process.env.NEXT_PUBLIC_APP_NAME || 'Daily Attendance',
+      appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      database: {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || '3306',
+        name: process.env.DB_NAME || 'daily_attendance',
+        user: process.env.DB_USER || 'root',
+      },
+      email: {
+        host: process.env.EMAIL_HOST || 'smtp.mailtrap.io',
+        port: process.env.EMAIL_PORT || '2525',
+        from: process.env.EMAIL_FROM || 'Daily Attendance <no-reply@dailyattendance.com>',
+      },
+      timezone: 'Asia/Jakarta (WIB)',
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        user: users[0] || null,
+        config,
+      },
+    });
+  } catch (error: any) {
+    console.error('[Admin Settings GET Error]:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Gagal memuat pengaturan.' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const session = await getSessionUser();
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Akses ditolak. Izin Administrator diperlukan.' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const { username, email, currentPassword, newPassword, confirmNewPassword } = body;
+
+    const users = await query<User[]>(
+      'SELECT id, password FROM users WHERE id = ?',
+      [session.id]
+    );
+
+    if (!users || users.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'User tidak ditemukan.' },
+        { status: 404 }
+      );
+    }
+
+    const user = users[0];
+
+    // If changing password, verify current password
+    if (newPassword) {
+      if (!currentPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Password saat ini harus diisi untuk mengubah password.' },
+          { status: 400 }
+        );
+      }
+
+      const isValid = await comparePassword(currentPassword, user.password || '');
+      if (!isValid) {
+        return NextResponse.json(
+          { success: false, error: 'Password saat ini yang Anda masukkan salah.' },
+          { status: 400 }
+        );
+      }
+
+      if (newPassword.length < 8) {
+        return NextResponse.json(
+          { success: false, error: 'Password baru minimal 8 karakter.' },
+          { status: 400 }
+        );
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        return NextResponse.json(
+          { success: false, error: 'Password baru dan konfirmasi password tidak cocok.' },
+          { status: 400 }
+        );
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      await query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, session.id]);
+    }
+
+    // If updating username or email
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (username && username.trim() !== '') {
+      // Check if username taken by another user
+      const existingUser = await query<User[]>(
+        'SELECT id FROM users WHERE username = ? AND id != ? LIMIT 1',
+        [username.trim(), session.id]
+      );
+      if (existingUser.length > 0) {
+        return NextResponse.json(
+          { success: false, error: 'Username sudah digunakan oleh user lain.' },
+          { status: 409 }
+        );
+      }
+      updates.push('username = ?');
+      values.push(username.trim());
+    }
+
+    if (email && email.trim() !== '') {
+      const cleanEmail = email.trim().toLowerCase();
+      const existingEmail = await query<User[]>(
+        'SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1',
+        [cleanEmail, session.id]
+      );
+      if (existingEmail.length > 0) {
+        return NextResponse.json(
+          { success: false, error: 'Email sudah digunakan oleh user lain.' },
+          { status: 409 }
+        );
+      }
+      updates.push('email = ?');
+      values.push(cleanEmail);
+    }
+
+    if (updates.length > 0) {
+      values.push(session.id);
+      await query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Pengaturan akun admin berhasil diperbarui.',
+    });
+  } catch (error: any) {
+    console.error('[Admin Settings PUT Error]:', error);
+    return NextResponse.json(
+      { success: false, error: error.message || 'Gagal memperbarui pengaturan admin.' },
+      { status: 500 }
+    );
+  }
+}

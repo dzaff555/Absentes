@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F5F8FC;
+  --foreground: #0F172A;
+  --primary: #2563EB;
+  --sidebar-bg: #0F2747;
+  --sidebar-hover: #16365F;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-dark {
+  background: rgba(15, 39, 71, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Smooth fade-in and scale animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 50;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+html.dark {
+  color-scheme: dark;
+  --background: #0d1117;
+  --foreground: #e6edf3;
+}
+
+html.dark body,
+html.dark [class~="bg-[#F5F8FC]"] {
+  background-color: #0d1117 !important;
+  color: #e6edf3;
+}
+
+html.dark [class~="bg-white"],
+html.dark [class~="bg-white/90"] {
+  background-color: #161b22 !important;
+}
+
+html.dark [class~="bg-slate-50"],
+html.dark [class~="bg-slate-50/80"],
+html.dark [class~="bg-slate-50/50"],
+html.dark [class~="bg-slate-100"] {
+  background-color: #1c2128 !important;
+}
+
+html.dark [class~="bg-blue-50"],
+html.dark [class~="bg-blue-50/80"],
+html.dark [class~="bg-indigo-50"] {
+  background-color: #14243a !important;
+}
+
+html.dark [class~="bg-emerald-50"] {
+  background-color: #102b25 !important;
+}
+
+html.dark [class~="bg-amber-50"] {
+  background-color: #302513 !important;
+}
+
+html.dark [class~="bg-rose-50"] {
+  background-color: #321b22 !important;
+}
+
+html.dark .attendance-status-header {
+  background: #1c2128 !important;
+  border-color: #303943 !important;
+}
+
+html.dark [class~="text-slate-900"],
+html.dark [class~="text-slate-800"],
+html.dark [class~="text-slate-700"] {
+  color: #e6edf3 !important;
+}
+
+html.dark [class~="text-slate-600"],
+html.dark [class~="text-slate-500"] {
+  color: #a5b0bd !important;
+}
+
+html.dark [class~="text-slate-400"] {
+  color: #8793a1 !important;
+}
+
+html.dark [class~="text-blue-600"],
+html.dark [class~="text-blue-700"],
+html.dark [class~="text-blue-800"] {
+  color: #93c5fd !important;
+}
+
+html.dark [class~="text-indigo-600"],
+html.dark [class~="text-indigo-700"] {
+  color: #c4b5fd !important;
+}
+
+html.dark [class~="text-emerald-600"],
+html.dark [class~="text-emerald-700"],
+html.dark [class~="text-emerald-800"] {
+  color: #6ee7b7 !important;
+}
+
+html.dark [class~="text-amber-600"],
+html.dark [class~="text-amber-700"],
+html.dark [class~="text-amber-800"] {
+  color: #fcd34d !important;
+}
+
+html.dark [class~="text-rose-600"],
+html.dark [class~="text-rose-700"],
+html.dark [class~="text-rose-800"] {
+  color: #fda4af !important;
+}
+
+html.dark [class~="border-slate-50"],
+html.dark [class~="border-slate-100"],
+html.dark [class~="border-slate-200"],
+html.dark [class~="border-slate-200/70"],
+html.dark [class~="border-slate-200/80"],
+html.dark [class~="border-slate-300"] {
+  border-color: #303943 !important;
+}
+
+html.dark [class~="divide-slate-100"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #303943 !important;
+}
+
+html.dark [class~="hover:bg-slate-50"]:hover,
+html.dark [class~="hover:bg-slate-100"]:hover {
+  background-color: #252c35 !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="range"]),
+html.dark select,
+html.dark textarea {
+  border-color: #3b4652;
+  background-color: #111820;
+  color: #e6edf3;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #7d8996;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #46515e;
+}
