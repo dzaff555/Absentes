@@ -7,6 +7,7 @@ const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
 const DB_USER = process.env.DB_USER || (process.env.NODE_ENV === 'production' ? '' : 'root');
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const DB_NAME = process.env.DB_NAME || 'daily_attendance';
+const DB_SSL = String(process.env.DB_SSL || '').toLowerCase() === 'true';
 const HAS_MYSQL_ENV = Boolean(process.env.DB_HOST || process.env.DB_USER || process.env.DB_PORT || process.env.DB_PASSWORD || process.env.DB_NAME);
 const USE_LOCAL_DATA =
   String(process.env.NO_DATABASE || process.env.USE_LOCAL_DATA || '').toLowerCase() === 'true' ||
@@ -233,6 +234,7 @@ export function getDbPool(): mysql.Pool {
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
+      ...(DB_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
     });
   }
   return pool;
@@ -255,6 +257,7 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
       port: DB_PORT,
       user: DB_USER,
       password: DB_PASSWORD,
+      ...(DB_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
     });
 
     await adminConn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);

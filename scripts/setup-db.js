@@ -9,6 +9,7 @@ async function setup() {
   const DB_USER = process.env.DB_USER || 'root';
   const DB_PASSWORD = process.env.DB_PASSWORD || '';
   const DB_NAME = process.env.DB_NAME || 'daily_attendance';
+  const DB_SSL = String(process.env.DB_SSL || '').toLowerCase() === 'true';
 
   console.log('🔄 Connecting to MySQL at', `${DB_HOST}:${DB_PORT}...`);
 
@@ -18,6 +19,7 @@ async function setup() {
       port: DB_PORT,
       user: DB_USER,
       password: DB_PASSWORD,
+      ...(DB_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
     });
 
     console.log('✅ Connected to MySQL server.');
@@ -32,6 +34,7 @@ async function setup() {
       password: DB_PASSWORD,
       database: DB_NAME,
       multipleStatements: true,
+      ...(DB_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
     });
 
     const sqlPath = path.join(__dirname, 'daily_attendance.sql');
