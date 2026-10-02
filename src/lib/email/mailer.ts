@@ -11,7 +11,7 @@ export async function sendPasswordResetEmail(
   resetToken: string,
   username: string
 ): Promise<{ success: boolean; previewUrl?: string; error?: string }> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-vercel-app.vercel.app';
   const resetLink = `${appUrl}/reset-password?token=${resetToken}`;
 
   const htmlContent = `

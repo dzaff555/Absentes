@@ -2,15 +2,15 @@ import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
 // Configuration from environment variables
-const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_HOST = process.env.DB_HOST || (process.env.NODE_ENV === 'production' ? '' : 'localhost');
 const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
-const DB_USER = process.env.DB_USER || 'root';
+const DB_USER = process.env.DB_USER || (process.env.NODE_ENV === 'production' ? '' : 'root');
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const DB_NAME = process.env.DB_NAME || 'daily_attendance';
 const HAS_MYSQL_ENV = Boolean(process.env.DB_HOST || process.env.DB_USER || process.env.DB_PORT || process.env.DB_PASSWORD || process.env.DB_NAME);
 const USE_LOCAL_DATA =
   String(process.env.NO_DATABASE || process.env.USE_LOCAL_DATA || '').toLowerCase() === 'true' ||
-  !HAS_MYSQL_ENV;
+  (!HAS_MYSQL_ENV && process.env.NODE_ENV !== 'production');
 
 let pool: mysql.Pool | null = null;
 let isInitialized = false;

@@ -13,8 +13,7 @@ export async function POST(request: Request) {
       process.env.ALLOW_DEMO_LOGIN === 'true' ||
       process.env.NO_DATABASE === 'true' ||
       process.env.USE_LOCAL_DATA === 'true' ||
-      !hasMySqlConfig ||
-      process.env.NODE_ENV !== 'production';
+      (!hasMySqlConfig && process.env.NODE_ENV !== 'production');
     const adminDemoUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
     const adminDemoPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
