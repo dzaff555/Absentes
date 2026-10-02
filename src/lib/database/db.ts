@@ -7,7 +7,10 @@ const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
 const DB_USER = process.env.DB_USER || 'root';
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const DB_NAME = process.env.DB_NAME || 'daily_attendance';
-const USE_LOCAL_DATA = String(process.env.NO_DATABASE || process.env.USE_LOCAL_DATA || '').toLowerCase() === 'true';
+const HAS_MYSQL_ENV = Boolean(process.env.DB_HOST || process.env.DB_USER || process.env.DB_PORT || process.env.DB_PASSWORD || process.env.DB_NAME);
+const USE_LOCAL_DATA =
+  String(process.env.NO_DATABASE || process.env.USE_LOCAL_DATA || '').toLowerCase() === 'true' ||
+  !HAS_MYSQL_ENV;
 
 let pool: mysql.Pool | null = null;
 let isInitialized = false;

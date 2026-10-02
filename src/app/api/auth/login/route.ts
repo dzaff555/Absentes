@@ -8,7 +8,13 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { username, password, rememberMe } = body;
 
-    const demoLoginEnabled = process.env.ALLOW_DEMO_LOGIN === 'true' || process.env.NODE_ENV !== 'production';
+    const hasMySqlConfig = Boolean(process.env.DB_HOST || process.env.DB_USER || process.env.DB_PORT || process.env.DB_PASSWORD || process.env.DB_NAME);
+    const demoLoginEnabled =
+      process.env.ALLOW_DEMO_LOGIN === 'true' ||
+      process.env.NO_DATABASE === 'true' ||
+      process.env.USE_LOCAL_DATA === 'true' ||
+      !hasMySqlConfig ||
+      process.env.NODE_ENV !== 'production';
     const adminDemoUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
     const adminDemoPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
