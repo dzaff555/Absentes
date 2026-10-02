@@ -5,6 +5,91 @@ import { User, AuthSession, AttendanceRole } from '@/types';
 
 export async function POST(request: Request) {
   try {
+    const body = await request.json();
+    const { username, password, rememberMe } = body;
+
+    const demoLoginEnabled = process.env.ALLOW_DEMO_LOGIN === 'true' || process.env.NODE_ENV !== 'production';
+    const adminDemoUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+    const adminDemoPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (demoLoginEnabled) {
+      const demoAccounts: Record<string, { id: number; username: string; email: string; role: 'ADMIN' | 'USER'; status: 'ACTIVE'; attendance_role: AttendanceRole; profile_completed: boolean; password: string }> = {
+        [adminDemoUsername]: {
+          id: 1,
+          username: adminDemoUsername,
+          email: process.env.ADMIN_EMAIL || 'admin@dailyattendance.local',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          attendance_role: 'CSOT',
+          profile_completed: true,
+          password: adminDemoPassword,
+        },
+        user: {
+          id: 2,
+          username: 'user',
+          email: 'user@dailyattendance.local',
+          role: 'USER',
+          status: 'ACTIVE',
+          attendance_role: 'CSOT',
+          profile_completed: true,
+          password: 'user123',
+        },
+      };
+
+      const normalizedUsername = String(username || '').trim();
+      const candidate = demoAccounts[normalizedUsername] || demoAccounts[normalizedUsername.toLowerCase()];
+
+      if (!candidate) {
+        return NextResponse.json(
+          { success: false, error: 'Username demo tidak ditemukan. Coba admin atau user.' },
+          { status: 401 }
+        );
+      }
+
+      if (String(password || '') !== candidate.password) {
+        return NextResponse.json(
+          { success: false, error: 'Password demo salah.' },
+          { status: 401 }
+        );
+      }
+
+      const sessionPayload: AuthSession = {
+        id: candidate.id,
+        username: candidate.username,
+        email: candidate.email,
+        role: candidate.role,
+        status: candidate.status,
+        attendance_role: candidate.attendance_role,
+        profile_completed: candidate.profile_completed,
+      };
+
+      const expiresIn = rememberMe ? '30d' : '7d';
+      const token = signToken(sessionPayload, expiresIn);
+      const redirectUrl = candidate.role === 'ADMIN' ? '/admin/dashboard' : candidate.profile_completed ? '/dashboard' : '/complete-profile';
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Login berhasil! (demo mode)',
+        data: {
+          user: sessionPayload,
+          redirectUrl,
+        },
+      });
+
+      const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;
+      response.cookies.set({
+        name: TOKEN_COOKIE_NAME,
+        value: token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge,
+      });
+
+      return response;
+    }
+
     // Check connection first
     const connCheck = await testConnection();
     if (!connCheck.connected) {
@@ -16,9 +101,6 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-
-    const body = await request.json();
-    const { username, password, rememberMe } = body;
 
     if (!username || !password) {
       return NextResponse.json(
