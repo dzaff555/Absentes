@@ -1,6 +1,7 @@
+const fs = require('fs');
+const path = require('path');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
 
 async function setup() {
   const DB_HOST = process.env.DB_HOST || 'localhost';
@@ -30,7 +31,22 @@ async function setup() {
       user: DB_USER,
       password: DB_PASSWORD,
       database: DB_NAME,
+      multipleStatements: true,
     });
+
+    const sqlPath = path.join(__dirname, 'daily_attendance.sql');
+    if (fs.existsSync(sqlPath)) {
+      const sqlDump = fs.readFileSync(sqlPath, 'utf8');
+      console.log('📝 Importing SQL dump from scripts/daily_attendance.sql...');
+      const tablesToDrop = ['chat_messages', 'chat_group_members', 'chat_groups', 'attendance', 'password_reset_tokens', 'users'];
+      for (const table of tablesToDrop) {
+        await db.query(`DROP TABLE IF EXISTS \`${table}\`;`);
+      }
+      await db.query(sqlDump);
+      await db.end();
+      console.log('🎉 SQL dump imported successfully!');
+      return;
+    }
 
     console.log('🛠 Creating tables...');
     await db.query(`
