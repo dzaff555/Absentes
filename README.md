@@ -41,11 +41,11 @@ optional and is only used for displaying the application URL in admin settings.
 Email is no longer requested or displayed in account forms, profiles, or reports.
 Existing email values remain in the database for users who still sign in with email.
 When an administrator creates a user account, they can optionally enter the user's
-real name. Real names are shown only in administrator user details and profiles;
-they are not included in user-facing profile or session responses.
+real name. Users can also view and edit their own real name from their profile.
+Administrators can see it in administrator user details and profiles, but one user
+cannot view another user's real name and it is not included in session responses.
 Users who do not yet have a completed profile must enter their real name during
-first-login profile completion. The value is saved once during that step and is
-visible only to administrators.
+first-login profile completion; they can update it later from their own profile.
 
 Staff profiles count attendance records marked `Hadir`, missed Friday–Sunday
 attendance days since account creation (excluding an attendance window that has

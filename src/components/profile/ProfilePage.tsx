@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const toast = useToast();
   const [user, setUser] = useState<AuthSession | null>(null);
+  const [realName, setRealName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -30,7 +31,17 @@ export default function ProfilePage() {
           return;
         }
         setUser(data.data);
-      } catch {
+
+        if (data.data.role !== 'ADMIN') {
+          const profileRes = await fetch('/api/profile');
+          const profileData = await profileRes.json();
+          if (!profileRes.ok || !profileData.success) {
+            throw new Error(profileData.error || 'Nama asli tidak dapat dimuat.');
+          }
+          setRealName(profileData.data.real_name || '');
+        }
+      } catch (error: unknown) {
+        console.error('Failed to load profile:', error);
         router.replace('/login');
       } finally {
         setIsLoading(false);
@@ -132,7 +143,7 @@ export default function ProfilePage() {
             <p className="text-xs font-medium sm:text-sm">
               {user?.role === 'ADMIN'
                 ? 'Di halaman ini Anda hanya dapat mengubah foto profil akun administrator.'
-                : 'Hanya foto profil, username Roblox, dan username Discord yang dapat diubah. Role tetap otomatis dan tidak dapat diedit.'}
+                : 'Nama asli, foto profil, username Roblox, dan username Discord dapat diubah. Nama asli hanya terlihat oleh Anda dan administrator; role tetap otomatis.'}
             </p>
           </div>
 
@@ -142,12 +153,14 @@ export default function ProfilePage() {
               attendance_role: user?.attendance_role || 'CSOT',
               roblox_username: user?.roblox_username || '',
               discord_username: user?.discord_username || '',
+              real_name: realName,
             }}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             submitLabel="Simpan Perubahan"
             showRole={user?.role !== 'ADMIN'}
             photoOnly={user?.role === 'ADMIN'}
+            showRealName={user?.role !== 'ADMIN'}
           />
         </div>
 

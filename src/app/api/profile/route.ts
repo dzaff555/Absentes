@@ -17,13 +17,14 @@ export async function GET() {
       id: number;
       username: string;
       role: 'USER' | 'ADMIN';
+      real_name: string | null;
       attendance_role: string | null;
       profile_photo: string | null;
       roblox_username: string | null;
       discord_username: string | null;
       profile_completed: boolean;
     }[]>(
-      'SELECT id, username, role, attendance_role, profile_photo, roblox_username, discord_username, profile_completed FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, username, role, real_name, attendance_role, profile_photo, roblox_username, discord_username, profile_completed FROM users WHERE id = ? LIMIT 1',
       [session.id]
     );
 
@@ -38,6 +39,7 @@ export async function GET() {
         id: user.id,
         username: user.username,
         role: user.role,
+        real_name: user.real_name || '',
         attendance_role: user.attendance_role || 'CSOT',
         profile_photo: user.profile_photo || '',
         roblox_username: user.roblox_username || '',
@@ -115,14 +117,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'User tidak ditemukan.' }, { status: 404 });
     }
 
-    const profileCompleted = Number(currentUser.profile_completed) === 1;
-    if (!profileCompleted && !real_name) {
+    if (!real_name) {
       return NextResponse.json(
-        { success: false, error: 'Nama asli wajib diisi saat melengkapi biodata pertama kali.' },
+        { success: false, error: 'Nama asli wajib diisi.' },
         { status: 400 }
       );
     }
-    if (!profileCompleted && real_name.length > 100) {
+    if (real_name.length > 100) {
       return NextResponse.json(
         { success: false, error: 'Nama asli maksimal 100 karakter.' },
         { status: 400 }
@@ -135,9 +136,8 @@ export async function POST(request: Request) {
 
     await query(
       `UPDATE users SET profile_photo = ?, attendance_role = ?, roblox_username = ?,
-       discord_username = ?, real_name = CASE WHEN profile_completed = FALSE THEN ? ELSE real_name END,
-       profile_completed = TRUE WHERE id = ?`,
-      [profile_photo || null, attendanceRole, roblox_username, discord_username, real_name || null, session.id]
+       discord_username = ?, real_name = ?, profile_completed = TRUE WHERE id = ?`,
+      [profile_photo || null, attendanceRole, roblox_username, discord_username, real_name, session.id]
     );
 
     return NextResponse.json({

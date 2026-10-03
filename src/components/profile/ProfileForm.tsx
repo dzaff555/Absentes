@@ -93,7 +93,7 @@ export function ProfileForm({
               autoComplete="name"
               required
               error={errors.real_name}
-              helperText="Nama asli hanya dapat dilihat oleh administrator."
+              helperText="Nama asli hanya dapat dilihat oleh Anda dan administrator."
             />
           )}
           {showRole && (

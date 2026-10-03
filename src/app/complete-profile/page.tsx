@@ -164,6 +164,10 @@ export default function CompleteProfilePage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Nama Asli</p>
+                <p className="mt-1 break-words text-sm font-bold text-slate-800">{pendingValues.real_name}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Role</p>
                 <p className="mt-1 text-sm font-bold text-slate-800">{pendingValues.attendance_role}</p>
               </div>
