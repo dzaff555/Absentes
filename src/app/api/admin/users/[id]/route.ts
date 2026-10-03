@@ -84,6 +84,15 @@ export async function PATCH(
 
     const body = await request.json();
     const { role, status, attendance_role: attendanceRole } = body;
+    const hasUsername = Object.prototype.hasOwnProperty.call(body, 'username');
+    const username = hasUsername && typeof body.username === 'string' ? body.username.trim() : '';
+
+    if (hasUsername && (username.length < 3 || username.length > 50)) {
+      return NextResponse.json(
+        { success: false, error: 'Username harus berisi 3–50 karakter.' },
+        { status: 400 }
+      );
+    }
 
     if (
       attendanceRole !== undefined &&
@@ -111,6 +120,18 @@ export async function PATCH(
 
     const updates: string[] = [];
     const values: unknown[] = [];
+
+    if (hasUsername) {
+      const existingUsers = await query<{ id: number }[]>(
+        'SELECT id FROM users WHERE username = ? AND id != ? LIMIT 1',
+        [username, targetUserId]
+      );
+      if (existingUsers.length > 0) {
+        return NextResponse.json({ success: false, error: 'Username sudah digunakan.' }, { status: 409 });
+      }
+      updates.push('username = ?');
+      values.push(username);
+    }
 
     if (role && (role === 'USER' || role === 'ADMIN')) {
       updates.push('role = ?');
