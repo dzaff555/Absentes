@@ -80,6 +80,7 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
 
   // Compute breadcrumb title
   const getPageTitle = () => {
+    if (pathname.startsWith('/admin/attendance-statistics')) return 'Attendance Statistics';
     if (pathname.startsWith('/admin/reports')) return 'Laporan Absensi';
     if (pathname.startsWith('/admin/users')) return 'Manajemen User';
     if (pathname.startsWith('/admin/settings')) return 'Pengaturan Sistem';

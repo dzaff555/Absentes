@@ -8,6 +8,7 @@ import {
   UserCheck,
   History,
   FileSpreadsheet,
+  ChartNoAxesColumn,
   Users,
   Settings,
   LogOut,
@@ -74,15 +75,16 @@ export function Sidebar({
 
   const userNavItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Absen Hari Ini', href: '/attendance', icon: UserCheck },
-    { label: 'Riwayat Absensi', href: '/attendance/history', icon: History },
+    { label: "Today's Attendance", href: '/attendance', icon: UserCheck },
+    { label: 'Attendance History', href: '/attendance/history', icon: History },
   ];
 
   const adminNavItems = [
-    { label: 'Dashboard Admin', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Laporan Absensi', href: '/admin/reports', icon: FileSpreadsheet },
-    { label: 'Kelola User', href: '/admin/users', icon: Users },
-    { label: 'Pengaturan Sistem', href: '/admin/settings', icon: Settings },
+    { label: 'Admin Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Attendance Reports', href: '/admin/reports', icon: FileSpreadsheet },
+    { label: 'Attendance Statistics', href: '/admin/attendance-statistics', icon: ChartNoAxesColumn },
+    { label: 'Manage Users', href: '/admin/users', icon: Users },
+    { label: 'System Settings', href: '/admin/settings', icon: Settings },
   ];
 
   const navItems = isAdmin ? adminNavItems : userNavItems;
@@ -142,7 +144,7 @@ export function Sidebar({
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="hidden lg:flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-          title={collapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
@@ -152,7 +154,7 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5 custom-scrollbar">
         {!collapsed && (
           <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Menu Utama
+            Main Menu
           </div>
         )}
 
@@ -186,7 +188,7 @@ export function Sidebar({
             <div className={`flex items-center pb-2 ${collapsed ? 'justify-center' : 'justify-between px-3'}`}>
               {!collapsed && (
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  List Staff
+                  Staff List
                 </div>
               )}
               <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-blue-200">
@@ -198,7 +200,7 @@ export function Sidebar({
                 key={staff.id}
                 href={isAdmin ? `/admin/users/${staff.id}` : `/staff/${staff.id}`}
                 onClick={() => setMobileOpen(false)}
-                title={collapsed ? `${staff.username}${isCurrentStaff(staff) ? ' (Kamu)' : ''} · ${staff.attendance_role}` : undefined}
+                title={collapsed ? `${staff.username}${isCurrentStaff(staff) ? ' (You)' : ''} · ${staff.attendance_role}` : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/8 hover:text-white ${collapsed ? 'justify-center px-0' : ''}`}
               >
                 {staff.profile_photo ? (
@@ -215,7 +217,7 @@ export function Sidebar({
                 {!collapsed && (
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate font-semibold text-white">
-                      {staff.username}{isCurrentStaff(staff) ? ' (Kamu)' : ''}
+                      {staff.username}{isCurrentStaff(staff) ? ' (You)' : ''}
                     </span>
                     <span className="truncate text-[11px] text-slate-400">{staff.attendance_role}</span>
                   </span>
@@ -223,7 +225,7 @@ export function Sidebar({
               </Link>
             ))}
             {staffMembers.length === 0 && !collapsed && (
-              <p className="px-3 py-2 text-xs text-slate-400">Belum ada staff aktif.</p>
+              <p className="px-3 py-2 text-xs text-slate-400">No active staff yet.</p>
             )}
             {!collapsed && staffCount !== null && staffCount > staffMembers.length && (
               <Link
@@ -231,7 +233,7 @@ export function Sidebar({
                 onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2 text-xs font-semibold text-blue-300 hover:text-white"
               >
-                Lihat semua staff
+                View all staff
               </Link>
             )}
         </div>
@@ -251,10 +253,10 @@ export function Sidebar({
               href="/dashboard"
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
-              title={collapsed ? 'Buka View Karyawan' : undefined}
+              title={collapsed ? 'Open staff view' : undefined}
             >
               <UserCheck className="w-5 h-5 text-slate-400 shrink-0" />
-              {!collapsed && <span>View Karyawan</span>}
+              {!collapsed && <span>Staff View</span>}
             </Link>
           </>
         )}
@@ -266,7 +268,7 @@ export function Sidebar({
           <Link
             href="/profile"
             onClick={() => setMobileOpen(false)}
-            title={collapsed ? `Profil ${user.username}` : 'Lihat biodata akun'}
+            title={collapsed ? `${user.username} profile` : 'View account profile'}
             className={`mb-2 flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/8 ${collapsed ? 'justify-center px-0' : ''}`}
           >
             {user.profile_photo ? (
@@ -296,7 +298,7 @@ export function Sidebar({
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-300 hover:text-white hover:bg-rose-600/20 transition-all cursor-pointer ${
             collapsed ? 'justify-center' : ''
           }`}
-          title="Keluar / Logout"
+          title="Log out"
         >
           <LogOut className="w-5 h-5 shrink-0 text-rose-400" />
           {!collapsed && <span>Logout</span>}

@@ -1,7 +1,10 @@
 import ExcelJS from 'exceljs';
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/auth';
-import { query } from '@/lib/database/db';
+import {
+  getAttendanceReportRecords,
+  validateAttendanceReportFilters,
+} from '@/lib/admin/attendance-report';
 import { getJakartaDateString } from '@/lib/utils/date';
 
 export async function GET(request: Request) {
@@ -12,59 +15,15 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate')?.trim();
-    const endDate = searchParams.get('endDate')?.trim();
-    const search = searchParams.get('search')?.trim();
-    const status = searchParams.get('status')?.trim();
-    const attendanceRole = searchParams.get('attendanceRole')?.trim();
-    const conditions: string[] = ['1=1'];
-    const params: unknown[] = [];
-
-    if (startDate) {
-      conditions.push('a.attendance_date >= ?');
-      params.push(startDate);
-    }
-    if (endDate) {
-      conditions.push('a.attendance_date <= ?');
-      params.push(endDate);
-    }
-    if (status && status !== 'ALL') {
-      conditions.push('a.status = ?');
-      params.push(status);
-    }
-    if (attendanceRole && attendanceRole !== 'ALL') {
-      conditions.push('a.attendance_role = ?');
-      params.push(attendanceRole);
-    }
-    if (search) {
-      conditions.push(
-        '(a.name LIKE ? OR a.attendance_role LIKE ? OR a.discord_username LIKE ? OR a.roblox_username LIKE ? OR u.username LIKE ? OR u.email LIKE ?)'
-      );
-      const term = `%${search}%`;
-      params.push(term, term, term, term, term, term);
-    }
-
-    const records = await query<{
-      attendance_date: string;
-      name: string;
-      user_id: number;
-      username: string;
-      email: string | null;
-      attendance_role: string;
-      discord_username: string;
-      roblox_username: string;
-      attendance_time: string;
-      status: string;
-    }[]>(
-      `SELECT DATE_FORMAT(a.attendance_date, '%Y-%m-%d') AS attendance_date,
-        a.name, u.id AS user_id, u.username, u.email, a.attendance_role,
-        a.discord_username, a.roblox_username, a.attendance_time, a.status
-       FROM attendance a
-       JOIN users u ON a.user_id = u.id
-       WHERE ${conditions.join(' AND ')}
-       ORDER BY a.attendance_date DESC, a.attendance_time DESC`,
-      params
-    );
+    const filters = {
+      startDate: searchParams.get('startDate')?.trim() || undefined,
+      endDate: searchParams.get('endDate')?.trim() || undefined,
+      search: searchParams.get('search')?.trim() || undefined,
+      status: searchParams.get('status')?.trim() || 'ALL',
+      attendanceRole: searchParams.get('attendanceRole')?.trim() || 'ALL',
+    };
+    validateAttendanceReportFilters(filters);
+    const records = await getAttendanceReportRecords(filters);
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Daily Attendance';
@@ -130,6 +89,9 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: unknown) {
+    if (error instanceof RangeError) {
+      return new NextResponse(error.message, { status: 400 });
+    }
     console.error('[Export Excel Error]:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }

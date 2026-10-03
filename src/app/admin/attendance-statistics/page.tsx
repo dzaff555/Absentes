@@ -1,0 +1,236 @@
+'use client';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { Calendar, CheckCircle2, Search, UserX } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Pagination } from '@/components/ui/Pagination';
+import { TableSkeleton } from '@/components/ui/LoadingSkeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { getJakartaDateString, formatIndonesianDate } from '@/lib/utils/date';
+import { ATTENDANCE_ROLES, AuthSession } from '@/types';
+import { useToast } from '@/components/ui/Toast';
+
+interface AttendanceStatisticsRecord {
+  id: number;
+  username: string;
+  attendance_role: string;
+  attended_days: number;
+  absent_days: number;
+}
+
+export default function AdminAttendanceStatisticsPage() {
+  const toast = useToast();
+  const [user, setUser] = useState<AuthSession | null>(null);
+  const [records, setRecords] = useState<AttendanceStatisticsRecord[]>([]);
+  const [startDate, setStartDate] = useState(() => getJakartaDateString());
+  const [endDate, setEndDate] = useState(() => getJakartaDateString());
+  const [search, setSearch] = useState('');
+  const [attendanceRole, setAttendanceRole] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [requestVersion, setRequestVersion] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) setUser(data.data);
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load current user:', error);
+      });
+  }, []);
+
+  const fetchStatistics = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        startDate,
+        endDate,
+        page: currentPage.toString(),
+      });
+      if (search) params.set('search', search);
+      if (attendanceRole !== 'ALL') params.set('attendanceRole', attendanceRole);
+
+      const response = await fetch(`/api/admin/attendance-statistics?${params.toString()}`);
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Unable to load attendance statistics.');
+      }
+
+      setRecords(data.data.records as AttendanceStatisticsRecord[]);
+      setTotalPages(data.data.pagination.totalPages || 1);
+      setTotalItems(data.data.pagination.totalItems || 0);
+    } catch (error: unknown) {
+      console.error('Failed to fetch attendance statistics:', error);
+      toast.error(
+        'Load failed',
+        error instanceof Error ? error.message : 'Unable to load attendance statistics.'
+      );
+      setRecords([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [attendanceRole, currentPage, endDate, search, startDate, toast]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchStatistics();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchStatistics, requestVersion]);
+
+  const handleFilterSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setCurrentPage(1);
+    setRequestVersion((version) => version + 1);
+  };
+
+  return (
+    <AppLayout user={user}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+            Attendance Statistics
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Attendance and absence counts per active account. Absences count calendar days
+            from the account creation date through today.
+          </p>
+        </div>
+
+        <Card className="p-5">
+          <form onSubmit={handleFilterSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Input
+                type="date"
+                label="Start date"
+                leftIcon={<Calendar className="h-4 w-4" />}
+                value={startDate}
+                onChange={(event) => {
+                  setStartDate(event.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <Input
+                type="date"
+                label="End date"
+                leftIcon={<Calendar className="h-4 w-4" />}
+                value={endDate}
+                onChange={(event) => {
+                  setEndDate(event.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <Input
+                label="Search account"
+                placeholder="Username or attendance role"
+                leftIcon={<Search className="h-4 w-4" />}
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">
+                  Attendance role
+                </label>
+                <select
+                  value={attendanceRole}
+                  onChange={(event) => {
+                    setAttendanceRole(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="ALL">All roles</option>
+                  {ATTENDANCE_ROLES.map((role) => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-slate-100 pt-3">
+              <Button type="submit" variant="primary" size="sm">
+                Apply filters
+              </Button>
+            </div>
+          </form>
+        </Card>
+
+        {isLoading ? (
+          <TableSkeleton rows={8} cols={5} />
+        ) : records.length === 0 ? (
+          <EmptyState
+            title="No accounts found"
+            description="No active accounts match the selected dates and filters."
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-slate-100 bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3.5">Account</th>
+                      <th className="px-4 py-3.5">Attendance role</th>
+                      <th className="px-4 py-3.5 text-center">Attended</th>
+                      <th className="px-4 py-3.5 text-center">Did not attend</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {records.map((record) => (
+                      <tr key={record.id} className="hover:bg-slate-50/80">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                              {record.username.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-slate-800">{record.username}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <Badge variant="primary">{record.attendance_role}</Badge>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                            {record.attended_days}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <span className="inline-flex items-center gap-1.5 font-semibold text-rose-700">
+                            <UserX className="h-4 w-4" />
+                            {record.absent_days}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={15}
+              onPageChange={setCurrentPage}
+            />
+            <p className="text-xs text-slate-500">
+              Period: {formatIndonesianDate(startDate)} – {formatIndonesianDate(endDate)}.
+              Future calendar days are not counted as absences.
+            </p>
+          </div>
+        )}
+      </div>
+    </AppLayout>
+  );
+}

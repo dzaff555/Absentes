@@ -15,7 +15,7 @@ import { ATTENDANCE_ROLES, AuthSession } from '@/types';
 import { useToast } from '@/components/ui/Toast';
 
 type AttendanceReportRecord = {
-  id: number;
+  id: number | string;
   user_id: number;
   name: string;
   attendance_role: string;
@@ -24,8 +24,8 @@ type AttendanceReportRecord = {
   attendance_date: string;
   attendance_time: string;
   status: string;
-  username?: string;
-  email?: string;
+  username: string;
+  email: string | null;
   profile_photo?: string | null;
 };
 
@@ -73,14 +73,20 @@ export default function AdminReportsPage() {
       const res = await fetch(`/api/admin/reports?${params.toString()}`);
       const data = await res.json();
 
-      if (data.success) {
+      if (res.ok && data.success) {
         setRecords((data.data.records as AttendanceReportRecord[]) || []);
         setTotalPages(data.data.pagination.totalPages || 1);
         setTotalItems(data.data.pagination.totalItems || 0);
+      } else {
+        throw new Error(data.error || 'Gagal memuat laporan absensi.');
       }
     } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error('Gagal', 'Terjadi kesalahan saat memuat laporan.');
+      toast.error(
+        'Gagal',
+        error instanceof Error ? error.message : 'Terjadi kesalahan saat memuat laporan.'
+      );
+      setRecords([]);
     } finally {
       setIsLoading(false);
     }
@@ -284,7 +290,9 @@ export default function AdminReportsPage() {
         ) : records.length === 0 ? (
           <EmptyState
             title="Tidak Ada Laporan Ditemukan"
-            description="Tidak ada catatan absensi yang sesuai dengan rentang tanggal atau kriteria filter yang Anda tentukan."
+            description={status === 'Belum Absen'
+              ? 'Tidak ditemukan akun aktif yang belum absen pada tanggal atau periode tersebut.'
+              : 'Tidak ada catatan absensi yang sesuai dengan rentang tanggal atau kriteria filter yang Anda tentukan.'}
             actionLabel="Reset Filter"
             onAction={handleResetFilters}
           />
@@ -308,7 +316,7 @@ export default function AdminReportsPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {records.map((r, index) => (
-                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={`${r.id}-${r.attendance_date}`} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4 text-center text-slate-400 font-medium">
                           {(currentPage - 1) * 15 + index + 1}
                         </td>
@@ -338,16 +346,16 @@ export default function AdminReportsPage() {
                           {r.attendance_role}
                         </td>
                         <td className="py-3.5 px-4 font-mono text-indigo-600">
-                          {r.discord_username}
+                          {r.discord_username || '-'}
                         </td>
                         <td className="py-3.5 px-4 font-mono text-slate-700">
-                          {r.roblox_username}
+                          {r.roblox_username || '-'}
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap font-semibold text-blue-600">
-                          {formatIndonesianTime(r.attendance_time)}
+                          {r.attendance_time === '-' ? '-' : formatIndonesianTime(r.attendance_time)}
                         </td>
                         <td className="py-3.5 px-4 text-center">
-                          <Badge variant="success" dot>
+                          <Badge variant={r.status === 'Belum Absen' ? 'danger' : 'success'} dot>
                             {r.status}
                           </Badge>
                         </td>
