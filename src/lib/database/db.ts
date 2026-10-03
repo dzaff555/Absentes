@@ -7,162 +7,9 @@ const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
 const DB_USER = process.env.DB_USER || (process.env.NODE_ENV === 'production' ? '' : 'root');
 const DB_PASSWORD = process.env.DB_PASSWORD || '';
 const DB_NAME = process.env.DB_NAME || 'daily_attendance';
-const HAS_MYSQL_ENV = Boolean(process.env.DB_HOST || process.env.DB_USER || process.env.DB_PORT || process.env.DB_PASSWORD || process.env.DB_NAME);
-const USE_LOCAL_DATA =
-  String(process.env.NO_DATABASE || process.env.USE_LOCAL_DATA || '').toLowerCase() === 'true' ||
-  (!HAS_MYSQL_ENV && process.env.NODE_ENV !== 'production');
 
 let pool: mysql.Pool | null = null;
 let isInitialized = false;
-
-type LocalUser = {
-  id: number;
-  username: string;
-  email: string | null;
-  password: string;
-  role: 'USER' | 'ADMIN';
-  status: 'ACTIVE' | 'DISABLED';
-  attendance_role: 'CSOT' | 'PPKA' | 'MASINIS' | 'PKD' | 'PJL';
-  profile_photo: string | null;
-  roblox_username: string | null;
-  discord_username: string | null;
-  profile_completed: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-const localUsers: LocalUser[] = [];
-
-async function ensureLocalSeed() {
-  if (localUsers.length > 0) return;
-
-  const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
-  const userPassword = await bcrypt.hash('user123', 10);
-
-  localUsers.push(
-    {
-      id: 1,
-      username: process.env.ADMIN_USERNAME || 'admin',
-      email: process.env.ADMIN_EMAIL || 'admin@dailyattendance.local',
-      password: adminPassword,
-      role: 'ADMIN',
-      status: 'ACTIVE',
-      attendance_role: 'CSOT',
-      profile_photo: null,
-      roblox_username: null,
-      discord_username: null,
-      profile_completed: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      username: 'user',
-      email: 'user@dailyattendance.local',
-      password: userPassword,
-      role: 'USER',
-      status: 'ACTIVE',
-      attendance_role: 'CSOT',
-      profile_photo: null,
-      roblox_username: 'demo-roblox',
-      discord_username: 'demo-discord',
-      profile_completed: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-  );
-}
-
-function localQuery(sql: string, params: unknown[] = []): unknown[] {
-  const normalizedSql = sql.replace(/\s+/g, ' ').trim();
-
-  if (normalizedSql.startsWith('SELECT COUNT(*)')) {
-    const total = localUsers.length;
-    return [{ total }];
-  }
-
-  if (normalizedSql.includes('FROM users WHERE username = ? OR email = ? LIMIT 1')) {
-    const [username, email] = params as [string, string];
-    const match = localUsers.find((user) => user.username === username || user.email === email) || null;
-    return match ? [match] : [];
-  }
-
-  if (normalizedSql.includes('FROM users WHERE id = ? LIMIT 1')) {
-    const [id] = params as [number];
-    const match = localUsers.find((user) => user.id === Number(id));
-    return match ? [match] : [];
-  }
-
-  if (normalizedSql.includes('FROM users WHERE username = ? LIMIT 1')) {
-    const [username] = params as [string];
-    const match = localUsers.find((user) => user.username === username) || null;
-    return match ? [match] : [];
-  }
-
-  if (normalizedSql.includes('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1')) {
-    const [username, email] = params as [string, string];
-    const match = localUsers.find((user) => user.username === username || user.email === email) || null;
-    return match ? [{ id: match.id }] : [];
-  }
-
-  if (normalizedSql.includes('SELECT attendance_role, profile_completed FROM users WHERE id = ? LIMIT 1')) {
-    const [id] = params as [number];
-    const match = localUsers.find((user) => user.id === Number(id));
-    return match ? [{ attendance_role: match.attendance_role, profile_completed: match.profile_completed }] : [];
-  }
-
-  if (normalizedSql.includes('SELECT id FROM users WHERE username = ? LIMIT 1')) {
-    const [username] = params as [string];
-    const match = localUsers.find((user) => user.username === username) || null;
-    return match ? [{ id: match.id }] : [];
-  }
-
-  if (normalizedSql.startsWith('INSERT INTO users')) {
-    const [username, email, password, role, status, attendanceRole, profileCompleted, robloxUsername, discordUsername] = params as [
-      string,
-      string | null,
-      string,
-      string,
-      string,
-      string,
-      boolean,
-      string | null,
-      string | null,
-    ];
-    const newUser: LocalUser = {
-      id: localUsers.length ? Math.max(...localUsers.map((u) => u.id)) + 1 : 1,
-      username,
-      email,
-      password,
-      role: role as 'USER' | 'ADMIN',
-      status: status as 'ACTIVE' | 'DISABLED',
-      attendance_role: (attendanceRole || 'CSOT') as LocalUser['attendance_role'],
-      profile_photo: null,
-      roblox_username: robloxUsername ?? null,
-      discord_username: discordUsername ?? null,
-      profile_completed: Boolean(profileCompleted),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    localUsers.push(newUser);
-    return [{ insertId: newUser.id }];
-  }
-
-  if (normalizedSql.startsWith('UPDATE users SET')) {
-    const [value, id] = params.slice(-2) as [string, number];
-    const target = localUsers.find((user) => user.id === Number(id));
-    if (!target) return [{ affectedRows: 0 }];
-
-    if (normalizedSql.includes('password = ?')) {
-      target.password = value as string;
-    }
-    target.updated_at = new Date().toISOString();
-    return [{ affectedRows: 1 }];
-  }
-
-  return [];
-}
 
 async function ensureColumns(
   dbPool: mysql.Pool,
@@ -211,16 +58,6 @@ async function ensureEmailIsOptional(dbPool: mysql.Pool) {
 }
 
 export function getDbPool(): mysql.Pool {
-  if (USE_LOCAL_DATA) {
-    return mysql.createPool({
-      host: '127.0.0.1',
-      port: 3306,
-      user: 'local-demo',
-      password: 'local-demo',
-      database: 'local-demo',
-    });
-  }
-
   if (!pool) {
     pool = mysql.createPool({
       host: DB_HOST,
@@ -241,12 +78,6 @@ export function getDbPool(): mysql.Pool {
 export async function initDatabase(): Promise<{ success: boolean; message: string }> {
   if (isInitialized) {
     return { success: true, message: 'Database already initialized' };
-  }
-
-  if (USE_LOCAL_DATA) {
-    await ensureLocalSeed();
-    isInitialized = true;
-    return { success: true, message: 'Local demo database initialized successfully' };
   }
 
   try {
@@ -373,21 +204,12 @@ export async function query<T = unknown>(sql: string, params: unknown[] = []): P
     }
   }
 
-  if (USE_LOCAL_DATA) {
-    return localQuery(sql, params) as T;
-  }
-
   const dbPool = getDbPool();
   const [results] = await dbPool.query(sql, params);
   return results as T;
 }
 
 export async function testConnection(): Promise<{ connected: boolean; error?: string }> {
-  if (USE_LOCAL_DATA) {
-    await ensureLocalSeed();
-    return { connected: true };
-  }
-
   try {
     const dbPool = getDbPool();
     const connection = await dbPool.getConnection();
