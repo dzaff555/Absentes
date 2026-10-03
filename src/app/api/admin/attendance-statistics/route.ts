@@ -9,6 +9,7 @@ interface AttendanceStatisticsRecord {
   id: number;
   username: string;
   attendance_role: string;
+  profile_photo: string | null;
   created_at: string;
   attended_days: number;
 }
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
         u.id,
         u.username,
         u.attendance_role,
+        u.profile_photo,
         DATE_FORMAT(u.created_at, '%Y-%m-%d') AS created_at,
         COUNT(DISTINCT a.attendance_date) AS attended_days
       FROM users u
@@ -79,7 +81,7 @@ export async function GET(request: Request) {
         AND a.attendance_date >= GREATEST(?, DATE(u.created_at))
         AND a.attendance_date <= ?
       WHERE ${whereSql}
-      GROUP BY u.id, u.username, u.attendance_role, u.created_at
+      GROUP BY u.id, u.username, u.attendance_role, u.profile_photo, u.created_at
       ORDER BY u.username ASC
       LIMIT ? OFFSET ?`,
       [startDate, effectiveEndDate, ...userParams, limit, offset]

@@ -18,6 +18,7 @@ interface AttendanceStatisticsRecord {
   id: number;
   username: string;
   attendance_role: string;
+  profile_photo: string | null;
   attended_days: number;
   absent_days: number;
 }
@@ -190,9 +191,17 @@ export default function AdminAttendanceStatisticsPage() {
                       <tr key={record.id} className="hover:bg-slate-50/80">
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
-                              {record.username.charAt(0).toUpperCase()}
-                            </div>
+                            {record.profile_photo ? (
+                              <img
+                                src={record.profile_photo}
+                                alt={`${record.username} profile`}
+                                className="h-9 w-9 rounded-full border border-slate-200 object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                                {record.username.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <span className="font-semibold text-slate-800">{record.username}</span>
                           </div>
                         </td>
