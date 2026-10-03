@@ -56,6 +56,7 @@ async function setup() {
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
+        real_name VARCHAR(100) NULL,
         email VARCHAR(100) NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         role ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
@@ -66,6 +67,10 @@ async function setup() {
         INDEX idx_users_email (email)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    const [realNameColumn] = await db.query("SHOW COLUMNS FROM users LIKE 'real_name'");
+    if (realNameColumn.length === 0) {
+      await db.query('ALTER TABLE users ADD COLUMN real_name VARCHAR(100) NULL AFTER username');
+    }
 
     const [emailColumn] = await db.query("SHOW COLUMNS FROM users LIKE 'email'");
     if (emailColumn.length > 0 && emailColumn[0].Null === 'NO') {

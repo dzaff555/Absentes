@@ -26,6 +26,7 @@ export async function GET(
     const users = await query<{
       id: number;
       username: string;
+      real_name: string | null;
       role: 'USER' | 'ADMIN';
       status: 'ACTIVE' | 'DISABLED';
       created_at: string;
@@ -36,7 +37,7 @@ export async function GET(
       last_attendance: string | null;
       last_attendance_status: string | null;
     }[]>(
-      `SELECT id, username, role, status,
+      `SELECT id, username, real_name, role, status,
         DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at,
         attendance_role, profile_photo, roblox_username, discord_username,
         (SELECT DATE_FORMAT(attendance_date, '%Y-%m-%d') FROM attendance

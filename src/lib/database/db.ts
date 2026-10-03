@@ -127,6 +127,7 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
+        real_name VARCHAR(100) NULL,
         email VARCHAR(100) NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         role ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
@@ -192,6 +193,7 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
 
     await ensureColumns(dbPool, [
       { table: 'users', column: 'attendance_role', definition: "ENUM('CSOT', 'PPKA', 'MASINIS', 'PKD', 'PJL') NOT NULL DEFAULT 'CSOT'" },
+      { table: 'users', column: 'real_name', definition: 'VARCHAR(100) NULL AFTER username' },
       { table: 'users', column: 'profile_photo', definition: 'LONGTEXT NULL' },
       { table: 'users', column: 'roblox_username', definition: 'VARCHAR(100) NULL' },
       { table: 'users', column: 'discord_username', definition: 'VARCHAR(100) NULL' },

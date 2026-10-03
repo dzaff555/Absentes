@@ -123,6 +123,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const username = typeof body.username === 'string' ? body.username.trim() : '';
+    const realName = typeof body.real_name === 'string' ? body.real_name.trim() : '';
     const password = typeof body.password === 'string' ? body.password : '';
     const attendanceRole = typeof body.attendance_role === 'string' ? body.attendance_role : '';
 
@@ -131,6 +132,9 @@ export async function POST(request: Request) {
     }
     if (password.length < 8) {
       return NextResponse.json({ success: false, error: 'Password minimal 8 karakter.' }, { status: 400 });
+    }
+    if (realName.length > 100) {
+      return NextResponse.json({ success: false, error: 'Nama asli maksimal 100 karakter.' }, { status: 400 });
     }
     if (!ATTENDANCE_ROLES.includes(attendanceRole as AttendanceRole)) {
       return NextResponse.json({ success: false, error: 'Role absensi tidak valid.' }, { status: 400 });
@@ -145,9 +149,9 @@ export async function POST(request: Request) {
     }
 
     const result = await query<{ insertId: number }>(
-      `INSERT INTO users (username, email, password, role, status, attendance_role, profile_completed)
-       VALUES (?, NULL, ?, 'USER', 'ACTIVE', ?, FALSE)`,
-      [username, await hashPassword(password), attendanceRole]
+      `INSERT INTO users (username, real_name, email, password, role, status, attendance_role, profile_completed)
+       VALUES (?, ?, NULL, ?, 'USER', 'ACTIVE', ?, FALSE)`,
+      [username, realName || null, await hashPassword(password), attendanceRole]
     );
 
     return NextResponse.json({

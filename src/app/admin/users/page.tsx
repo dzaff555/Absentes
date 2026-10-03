@@ -29,6 +29,7 @@ import { ATTENDANCE_ROLES, AuthSession, AttendanceRole, UserRole, UserStatus } f
 interface AdminUser {
   id: number;
   username: string;
+  real_name?: string | null;
   role: UserRole;
   status: UserStatus;
   created_at?: string;
@@ -68,6 +69,7 @@ export default function AdminUsersPage() {
   const [temporaryPassword, setTemporaryPassword] = useState<{ username: string; password: string } | null>(null);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
+  const [newRealName, setNewRealName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newAttendanceRole, setNewAttendanceRole] = useState<AttendanceRole>('CSOT');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -129,6 +131,7 @@ export default function AdminUsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: newUsername,
+          real_name: newRealName,
           password: newPassword,
           attendance_role: newAttendanceRole,
         }),
@@ -142,6 +145,7 @@ export default function AdminUsersPage() {
       toast.success('Akun Dibuat', `Akun @${newUsername.trim()} berhasil dibuat.`);
       setIsCreateUserOpen(false);
       setNewUsername('');
+      setNewRealName('');
       setNewPassword('');
       setNewAttendanceRole('CSOT');
       setCurrentPage(1);
@@ -598,6 +602,14 @@ export default function AdminUsersPage() {
               required
             />
             <Input
+              label="Nama Asli (Opsional)"
+              value={newRealName}
+              onChange={(event) => setNewRealName(event.target.value)}
+              maxLength={100}
+              autoComplete="name"
+              helperText="Hanya administrator yang dapat melihat nama asli ini."
+            />
+            <Input
               label="Password Awal"
               type="password"
               value={newPassword}
@@ -667,6 +679,12 @@ export default function AdminUsersPage() {
               )}
 
               <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 col-span-2">
+                  <span className="text-slate-400 block font-medium">Nama Asli</span>
+                  <span className="font-bold text-slate-800 mt-0.5 block">
+                    {viewUser.real_name || 'Belum diisi'}
+                  </span>
+                </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block font-medium">Role Sistem</span>
                   <span className="font-bold text-slate-800 mt-0.5 block">{viewUser.role}</span>

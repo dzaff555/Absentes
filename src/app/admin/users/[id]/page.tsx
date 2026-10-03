@@ -18,6 +18,7 @@ import { formatIndonesianDate, formatIndonesianDateTime } from '@/lib/utils/date
 interface StaffProfile {
   id: number;
   username: string;
+  real_name: string | null;
   role: 'USER' | 'ADMIN';
   status: 'ACTIVE' | 'DISABLED';
   attendance_role: string | null;
@@ -56,7 +57,7 @@ export default async function AdminStaffProfilePage({
 
   const attendanceThroughDate = getLastCompletedAttendanceDate();
   const users = await query<StaffProfile[]>(
-    `SELECT u.id, u.username, u.role, u.status, u.attendance_role, u.profile_photo,
+    `SELECT u.id, u.username, u.real_name, u.role, u.status, u.attendance_role, u.profile_photo,
       u.roblox_username, u.discord_username, u.profile_completed,
       DATE_FORMAT(u.created_at, '%Y-%m-%d %H:%i') AS created_at,
       DATE_FORMAT(u.created_at, '%Y-%m-%d') AS joined_date,
@@ -132,6 +133,12 @@ export default async function AdminStaffProfilePage({
           </div>
 
           <div className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2 sm:p-6">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <UserRound className="h-4 w-4" /> Nama Asli
+              </div>
+              <p className="mt-2 break-words text-sm font-bold text-slate-800">{staff.real_name || 'Belum diisi'}</p>
+            </div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                 <ShieldCheck className="h-4 w-4" /> Role Sistem

@@ -40,6 +40,9 @@ password, then saves the new password after confirmation. `NEXT_PUBLIC_APP_URL` 
 optional and is only used for displaying the application URL in admin settings.
 Email is no longer requested or displayed in account forms, profiles, or reports.
 Existing email values remain in the database for users who still sign in with email.
+When an administrator creates a user account, they can optionally enter the user's
+real name. Real names are shown only in administrator user details and profiles;
+they are not included in user-facing profile or session responses.
 
 Staff profiles count attendance records marked `Hadir`, missed Friday–Sunday
 attendance days since account creation (excluding an attendance window that has
