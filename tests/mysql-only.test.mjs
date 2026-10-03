@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 test('database connection requires MySQL even when demo flags are set', async () => {
+  process.env.NODE_ENV = 'production';
   process.env.DB_HOST = '127.0.0.1';
   process.env.DB_PORT = '1';
   process.env.DB_USER = 'test';
@@ -15,7 +16,7 @@ test('database connection requires MySQL even when demo flags are set', async ()
   try {
     const connection = await testConnection();
     assert.equal(connection.connected, false);
-    assert.ok(connection.error);
+    assert.match(connection.error, /Production MySQL is configured to use localhost/);
   } finally {
     await getDbPool().end();
   }

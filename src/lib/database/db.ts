@@ -28,6 +28,17 @@ const DB_NAME = DB_CONFIG.database || process.env.DB_NAME || 'daily_attendance';
 let pool: mysql.Pool | null = null;
 let isInitialized = false;
 
+function getDatabaseConfigurationError(): string | null {
+  const host = String(DB_CONFIG.host || '').toLowerCase();
+  const isLoopbackHost = ['localhost', '127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(host);
+
+  if (process.env.NODE_ENV === 'production' && isLoopbackHost) {
+    return 'Production MySQL is configured to use localhost. Set DATABASE_URL to the Railway public MySQL connection URL in Vercel Project Settings → Environment Variables, then redeploy.';
+  }
+
+  return null;
+}
+
 export function getDbConnectionInfo() {
   return {
     host: DB_CONFIG.host || 'localhost',
@@ -104,6 +115,12 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
   }
 
   try {
+    const configurationError = getDatabaseConfigurationError();
+    if (configurationError) {
+      console.error(`[MySQL Configuration Error] ${configurationError}`);
+      return { success: false, message: configurationError };
+    }
+
     const adminConn = await mysql.createConnection({ ...DB_CONFIG, database: undefined });
 
     await adminConn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
@@ -231,6 +248,12 @@ export async function testConnection(): Promise<{ connected: boolean; error?: st
   let connection: mysql.Connection | undefined;
 
   try {
+    const configurationError = getDatabaseConfigurationError();
+    if (configurationError) {
+      console.error(`[MySQL Configuration Error] ${configurationError}`);
+      return { connected: false, error: configurationError };
+    }
+
     connection = await mysql.createConnection({ ...DB_CONFIG, database: undefined });
     await connection.ping();
     return { connected: true };
