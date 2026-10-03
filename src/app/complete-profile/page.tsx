@@ -127,6 +127,7 @@ export default function CompleteProfilePage() {
               roblox_username: user?.roblox_username || '',
               discord_username: user?.discord_username || '',
             }}
+            showRealName
             onSubmit={handleFormSubmit}
             isSubmitting={isSubmitting}
             submitLabel="Simpan & Lanjutkan"

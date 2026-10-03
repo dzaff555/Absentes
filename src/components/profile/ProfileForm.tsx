@@ -12,6 +12,7 @@ export interface ProfileFormValues {
   attendance_role: string;
   roblox_username: string;
   discord_username: string;
+  real_name: string;
 }
 
 interface ProfileFormProps {
@@ -21,6 +22,7 @@ interface ProfileFormProps {
   isSubmitting?: boolean;
   showRole?: boolean;
   photoOnly?: boolean;
+  showRealName?: boolean;
 }
 
 export function ProfileForm({
@@ -30,16 +32,20 @@ export function ProfileForm({
   isSubmitting = false,
   showRole = true,
   photoOnly = false,
+  showRealName = false,
 }: ProfileFormProps) {
   const [profilePhoto, setProfilePhoto] = useState<string>(initialValues?.profile_photo || '');
   const [attendanceRole, setAttendanceRole] = useState<string>(initialValues?.attendance_role || 'CSOT');
   const [robloxUsername, setRobloxUsername] = useState<string>(initialValues?.roblox_username || '');
   const [discordUsername, setDiscordUsername] = useState<string>(initialValues?.discord_username || '');
+  const [realName, setRealName] = useState<string>(initialValues?.real_name || '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
 
+    if (showRealName && !realName.trim()) nextErrors.real_name = 'Nama asli wajib diisi.';
+    if (showRealName && realName.trim().length > 100) nextErrors.real_name = 'Nama asli maksimal 100 karakter.';
     if (!photoOnly && !robloxUsername.trim()) nextErrors.roblox_username = 'Username Roblox wajib diisi.';
     if (!photoOnly && !discordUsername.trim()) nextErrors.discord_username = 'Username Discord wajib diisi.';
 
@@ -60,6 +66,7 @@ export function ProfileForm({
       attendance_role: attendanceRole,
       roblox_username: robloxUsername.trim(),
       discord_username: discordUsername.trim(),
+      real_name: realName.trim(),
     });
   };
 
@@ -76,6 +83,19 @@ export function ProfileForm({
         />
 
         {!photoOnly && <div className="space-y-4">
+          {showRealName && (
+            <Input
+              label="Nama Asli"
+              placeholder="Masukkan nama asli"
+              value={realName}
+              onChange={(e) => setRealName(e.target.value)}
+              maxLength={100}
+              autoComplete="name"
+              required
+              error={errors.real_name}
+              helperText="Nama asli hanya dapat dilihat oleh administrator."
+            />
+          )}
           {showRole && (
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold uppercase tracking-wide text-slate-700">

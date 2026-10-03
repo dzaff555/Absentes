@@ -43,6 +43,9 @@ Existing email values remain in the database for users who still sign in with em
 When an administrator creates a user account, they can optionally enter the user's
 real name. Real names are shown only in administrator user details and profiles;
 they are not included in user-facing profile or session responses.
+Users who do not yet have a completed profile must enter their real name during
+first-login profile completion. The value is saved once during that step and is
+visible only to administrators.
 
 Staff profiles count attendance records marked `Hadir`, missed Friday–Sunday
 attendance days since account creation (excluding an attendance window that has

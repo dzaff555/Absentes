@@ -89,6 +89,7 @@ export async function POST(request: Request) {
 
     const roblox_username = typeof body.roblox_username === 'string' ? body.roblox_username.trim() : '';
     const discord_username = typeof body.discord_username === 'string' ? body.discord_username.trim() : '';
+    const real_name = typeof body.real_name === 'string' ? body.real_name.trim() : '';
 
     if (!roblox_username) {
       return NextResponse.json(
@@ -104,8 +105,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const userRows = await query<{ attendance_role: string | null }[]>(
-      'SELECT attendance_role FROM users WHERE id = ? LIMIT 1',
+    const userRows = await query<{ attendance_role: string | null; profile_completed: boolean | number }[]>(
+      'SELECT attendance_role, profile_completed FROM users WHERE id = ? LIMIT 1',
       [session.id]
     );
 
@@ -114,13 +115,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'User tidak ditemukan.' }, { status: 404 });
     }
 
+    const profileCompleted = Number(currentUser.profile_completed) === 1;
+    if (!profileCompleted && !real_name) {
+      return NextResponse.json(
+        { success: false, error: 'Nama asli wajib diisi saat melengkapi biodata pertama kali.' },
+        { status: 400 }
+      );
+    }
+    if (!profileCompleted && real_name.length > 100) {
+      return NextResponse.json(
+        { success: false, error: 'Nama asli maksimal 100 karakter.' },
+        { status: 400 }
+      );
+    }
+
     const attendanceRole = ATTENDANCE_ROLES.includes(currentUser.attendance_role as AttendanceRole)
       ? currentUser.attendance_role as AttendanceRole
       : 'CSOT';
 
     await query(
-      'UPDATE users SET profile_photo = ?, attendance_role = ?, roblox_username = ?, discord_username = ?, profile_completed = TRUE WHERE id = ?',
-      [profile_photo || null, attendanceRole, roblox_username, discord_username, session.id]
+      `UPDATE users SET profile_photo = ?, attendance_role = ?, roblox_username = ?,
+       discord_username = ?, real_name = CASE WHEN profile_completed = FALSE THEN ? ELSE real_name END,
+       profile_completed = TRUE WHERE id = ?`,
+      [profile_photo || null, attendanceRole, roblox_username, discord_username, real_name || null, session.id]
     );
 
     return NextResponse.json({
