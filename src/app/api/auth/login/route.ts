@@ -11,10 +11,16 @@ export async function POST(request: Request) {
     // Check connection first
     const connCheck = await testConnection();
     if (!connCheck.connected) {
+      const configError = connCheck.error?.startsWith('Production requires DATABASE_URL')
+        ? connCheck.error
+        : connCheck.error?.startsWith('Production MySQL is configured to use localhost')
+          ? connCheck.error
+          : 'Koneksi database MySQL gagal. Periksa DATABASE_URL dan pastikan memakai Railway public host dan port di environment Production Vercel.';
+
       return NextResponse.json(
         {
           success: false,
-          error: 'Koneksi database MySQL gagal. Periksa DATABASE_URL atau variabel DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, dan DB_NAME pada environment aplikasi.',
+          error: configError,
         },
         { status: 503 }
       );

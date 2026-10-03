@@ -32,6 +32,10 @@ function getDatabaseConfigurationError(): string | null {
   const host = String(DB_CONFIG.host || '').toLowerCase();
   const isLoopbackHost = ['localhost', '127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(host);
 
+  if (process.env.NODE_ENV === 'production' && !parsedDatabaseUrl) {
+    return 'Production requires DATABASE_URL. Set the Railway MySQL public URL in Vercel Project Settings → Environment Variables, then redeploy.';
+  }
+
   if (process.env.NODE_ENV === 'production' && isLoopbackHost) {
     return 'Production MySQL is configured to use localhost. Set DATABASE_URL to the Railway public MySQL connection URL in Vercel Project Settings → Environment Variables, then redeploy.';
   }

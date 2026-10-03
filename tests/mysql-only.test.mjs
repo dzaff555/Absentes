@@ -16,7 +16,7 @@ test('database connection requires MySQL even when demo flags are set', async ()
   try {
     const connection = await testConnection();
     assert.equal(connection.connected, false);
-    assert.match(connection.error, /Production MySQL is configured to use localhost/);
+    assert.match(connection.error, /Production requires DATABASE_URL/);
   } finally {
     await getDbPool().end();
   }
