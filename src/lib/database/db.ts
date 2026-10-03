@@ -1,12 +1,29 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 
-// Configuration from environment variables
-const DB_HOST = process.env.DB_HOST || (process.env.NODE_ENV === 'production' ? '' : 'localhost');
-const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
-const DB_USER = process.env.DB_USER || (process.env.NODE_ENV === 'production' ? '' : 'root');
-const DB_PASSWORD = process.env.DB_PASSWORD || '';
-const DB_NAME = process.env.DB_NAME || 'daily_attendance';
+const DATABASE_URL = process.env.DATABASE_URL?.trim();
+const parsedDatabaseUrl = DATABASE_URL ? new URL(DATABASE_URL) : null;
+
+if (parsedDatabaseUrl && parsedDatabaseUrl.protocol !== 'mysql:') {
+  throw new Error('DATABASE_URL must use the mysql:// protocol.');
+}
+
+const DB_CONFIG: mysql.ConnectionOptions = parsedDatabaseUrl
+  ? {
+      host: parsedDatabaseUrl.hostname,
+      port: Number(parsedDatabaseUrl.port || 3306),
+      user: decodeURIComponent(parsedDatabaseUrl.username),
+      password: decodeURIComponent(parsedDatabaseUrl.password),
+      database: decodeURIComponent(parsedDatabaseUrl.pathname.replace(/^\/+/, '')),
+    }
+  : {
+      host: process.env.DB_HOST || (process.env.NODE_ENV === 'production' ? '' : 'localhost'),
+      port: parseInt(process.env.DB_PORT || '3306', 10),
+      user: process.env.DB_USER || (process.env.NODE_ENV === 'production' ? '' : 'root'),
+      password: process.env.DB_PASSWORD || '',
+    };
+
+const DB_NAME = DB_CONFIG.database || process.env.DB_NAME || 'daily_attendance';
 
 let pool: mysql.Pool | null = null;
 let isInitialized = false;
@@ -60,10 +77,7 @@ async function ensureEmailIsOptional(dbPool: mysql.Pool) {
 export function getDbPool(): mysql.Pool {
   if (!pool) {
     pool = mysql.createPool({
-      host: DB_HOST,
-      port: DB_PORT,
-      user: DB_USER,
-      password: DB_PASSWORD,
+      ...DB_CONFIG,
       database: DB_NAME,
       waitForConnections: true,
       connectionLimit: 15,
@@ -81,12 +95,7 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
   }
 
   try {
-    const adminConn = await mysql.createConnection({
-      host: DB_HOST,
-      port: DB_PORT,
-      user: DB_USER,
-      password: DB_PASSWORD,
-    });
+    const adminConn = await mysql.createConnection({ ...DB_CONFIG, database: undefined });
 
     await adminConn.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
     await adminConn.end();
@@ -210,14 +219,16 @@ export async function query<T = unknown>(sql: string, params: unknown[] = []): P
 }
 
 export async function testConnection(): Promise<{ connected: boolean; error?: string }> {
+  let connection: mysql.Connection | undefined;
+
   try {
-    const dbPool = getDbPool();
-    const connection = await dbPool.getConnection();
+    connection = await mysql.createConnection({ ...DB_CONFIG, database: undefined });
     await connection.ping();
-    connection.release();
     return { connected: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'MySQL connection failed. Ensure MySQL service is started (e.g., via Laragon or XAMPP).';
     return { connected: false, error: message };
+  } finally {
+    await connection?.end();
   }
 }
