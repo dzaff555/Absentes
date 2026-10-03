@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getSessionUser, hashPassword } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
+import { ATTENDANCE_ROLES, AttendanceRole } from '@/types';
 
 export async function GET(
   _request: Request,
@@ -82,7 +83,15 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { role, status } = body;
+    const { role, status, attendance_role: attendanceRole } = body;
+
+    if (
+      attendanceRole !== undefined &&
+      (typeof attendanceRole !== 'string' ||
+        !ATTENDANCE_ROLES.includes(attendanceRole as AttendanceRole))
+    ) {
+      return NextResponse.json({ success: false, error: 'Role absensi tidak valid.' }, { status: 400 });
+    }
 
     // Prevent admin from disabling or demoting their own logged-in account
     if (session.id === targetUserId) {
@@ -111,6 +120,11 @@ export async function PATCH(
     if (status && (status === 'ACTIVE' || status === 'DISABLED')) {
       updates.push('status = ?');
       values.push(status);
+    }
+
+    if (attendanceRole !== undefined) {
+      updates.push('attendance_role = ?');
+      values.push(attendanceRole);
     }
 
     if (updates.length === 0) {

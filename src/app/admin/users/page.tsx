@@ -11,6 +11,7 @@ import {
   Trash2,
   Copy,
   UserPlus,
+  BriefcaseBusiness,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -59,6 +60,8 @@ export default function AdminUsersPage() {
   const [isLoadingUserDetails, setIsLoadingUserDetails] = useState(false);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
   const [editRole, setEditRole] = useState<'USER' | 'ADMIN'>('USER');
+  const [editAttendanceUser, setEditAttendanceUser] = useState<AdminUser | null>(null);
+  const [editAttendanceRole, setEditAttendanceRole] = useState<AttendanceRole>('CSOT');
   const [confirmToggleUser, setConfirmToggleUser] = useState<AdminUser | null>(null);
   const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
@@ -229,6 +232,36 @@ export default function AdminUsersPage() {
       );
       setEditUser(null);
       fetchUsers();
+    } catch (err: unknown) {
+      toast.error('Gagal', err instanceof Error ? err.message : 'Terjadi kesalahan.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateAttendanceRole = async () => {
+    if (!editAttendanceUser) return;
+    setIsUpdating(true);
+
+    try {
+      const res = await fetch(`/api/admin/users/${editAttendanceUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attendance_role: editAttendanceRole }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        toast.error('Gagal', data.error || 'Gagal mengubah role absensi user.');
+        return;
+      }
+
+      toast.success(
+        'Role Absensi Diperbarui',
+        `Role absensi @${editAttendanceUser.username} berhasil diubah menjadi ${editAttendanceRole}.`
+      );
+      setEditAttendanceUser(null);
+      await fetchUsers();
     } catch (err: unknown) {
       toast.error('Gagal', err instanceof Error ? err.message : 'Terjadi kesalahan.');
     } finally {
@@ -471,6 +504,22 @@ export default function AdminUsersPage() {
                                 <Edit2 className="w-4 h-4" />
                               </button>
 
+                              <button
+                                onClick={() => {
+                                  setEditAttendanceUser(u);
+                                  setEditAttendanceRole(
+                                    ATTENDANCE_ROLES.includes(u.attendance_role as AttendanceRole)
+                                      ? u.attendance_role as AttendanceRole
+                                      : 'CSOT'
+                                  );
+                                }}
+                                disabled={isUpdating}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                                title="Ubah Role Absensi"
+                              >
+                                <BriefcaseBusiness className="w-4 h-4" />
+                              </button>
+
                               {/* Disable / Enable toggle */}
                               <button
                                 onClick={() => setConfirmToggleUser(u)}
@@ -648,6 +697,52 @@ export default function AdminUsersPage() {
               <div className="pt-2 flex justify-end">
                 <Button variant="secondary" onClick={() => setViewUser(null)}>
                   Tutup
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+          isOpen={!!editAttendanceUser}
+          onClose={() => setEditAttendanceUser(null)}
+          title="Ubah Role Absensi"
+          description={`Pilih role absensi untuk akun @${editAttendanceUser?.username}`}
+          maxWidth="sm"
+        >
+          {editAttendanceUser && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="attendance-role" className="block text-xs font-semibold text-slate-700">
+                  Role Absensi
+                </label>
+                <select
+                  id="attendance-role"
+                  value={editAttendanceRole}
+                  onChange={(event) => setEditAttendanceRole(event.target.value as AttendanceRole)}
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  {ATTENDANCE_ROLES.map((attendanceRole) => (
+                    <option key={attendanceRole} value={attendanceRole}>{attendanceRole}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditAttendanceUser(null)}
+                  disabled={isUpdating}
+                >
+                  Batal
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleUpdateAttendanceRole}
+                  isLoading={isUpdating}
+                  loadingText="Menyimpan..."
+                >
+                  Simpan Perubahan
                 </Button>
               </div>
             </div>
