@@ -58,3 +58,10 @@ CREATE TABLE IF NOT EXISTS staff_warnings (
   CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_staff_warnings_user_created (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: admin attendance inbox read cursor
+CREATE TABLE IF NOT EXISTS admin_attendance_inbox (
+  admin_id INT PRIMARY KEY,
+  read_through_id INT NOT NULL DEFAULT 0,
+  CONSTRAINT fk_admin_attendance_inbox_user FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

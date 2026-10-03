@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   MailOpen,
+  UserCheck,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -25,11 +26,20 @@ import { useTheme } from '@/components/theme/ThemeProvider';
 
 interface InboxWarning {
   id: number;
+  warning_number: number;
   reason: string;
   warning_date: string;
   warning_time: string;
   read_at: string | null;
   issued_by_username: string | null;
+}
+
+interface InboxAttendance {
+  id: number;
+  username: string;
+  attendance_date: string;
+  attendance_time: string;
+  is_read: boolean;
 }
 
 export interface HeaderProps {
@@ -47,6 +57,8 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
   const [currentDate, setCurrentDate] = useState<string>('');
   const [inboxWarnings, setInboxWarnings] = useState<InboxWarning[]>([]);
   const [unreadWarningCount, setUnreadWarningCount] = useState(0);
+  const [inboxAttendances, setInboxAttendances] = useState<InboxAttendance[]>([]);
+  const [unreadAttendanceCount, setUnreadAttendanceCount] = useState(0);
   const [isInboxLoading, setIsInboxLoading] = useState(false);
   const [isMarkingRead, setIsMarkingRead] = useState(false);
   const [inboxError, setInboxError] = useState('');
@@ -69,8 +81,13 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
         throw new Error(result.error || 'Gagal memuat inbox.');
       }
 
-      setInboxWarnings(result.data.warnings as InboxWarning[]);
-      setUnreadWarningCount(Number(result.data.unreadCount || 0));
+      if (isStaff) {
+        setInboxWarnings(result.data.warnings as InboxWarning[]);
+        setUnreadWarningCount(Number(result.data.unreadCount || 0));
+      } else {
+        setInboxAttendances(result.data.attendances as InboxAttendance[]);
+        setUnreadAttendanceCount(Number(result.data.unreadCount || 0));
+      }
     } catch (error: unknown) {
       setInboxError(error instanceof Error ? error.message : 'Gagal memuat inbox.');
     } finally {
@@ -104,10 +121,41 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
     };
   }, [isStaff, user?.id]);
 
+  useEffect(() => {
+    if (user?.role !== 'ADMIN') return;
+
+    let isActive = true;
+    const refreshAttendanceInbox = async () => {
+      try {
+        const response = await fetch('/api/inbox');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Gagal memuat inbox absensi.');
+        }
+        if (isActive) {
+          setInboxAttendances(result.data.attendances as InboxAttendance[]);
+          setUnreadAttendanceCount(Number(result.data.unreadCount || 0));
+          setInboxError('');
+        }
+      } catch (error: unknown) {
+        if (isActive) {
+          setInboxError(error instanceof Error ? error.message : 'Gagal memuat inbox absensi.');
+        }
+      }
+    };
+
+    void refreshAttendanceInbox();
+    const timer = window.setInterval(() => void refreshAttendanceInbox(), 30_000);
+    return () => {
+      isActive = false;
+      window.clearInterval(timer);
+    };
+  }, [user?.id, user?.role]);
+
   const toggleInbox = () => {
     const shouldOpen = !notificationsOpen;
     setNotificationsOpen(shouldOpen);
-    if (shouldOpen && isStaff) void loadInbox();
+    if (shouldOpen && (isStaff || user?.role === 'ADMIN')) void loadInbox();
   };
 
   const markWarningRead = async (warningId: number) => {
@@ -137,8 +185,9 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
     }
   };
 
-  const markAllWarningsRead = async () => {
-    if (unreadWarningCount === 0 || isMarkingRead) return;
+  const markAllInboxRead = async () => {
+    const unreadCount = isStaff ? unreadWarningCount : unreadAttendanceCount;
+    if (unreadCount === 0 || isMarkingRead) return;
 
     setIsMarkingRead(true);
     try {
@@ -153,8 +202,13 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
       }
 
       const readAt = new Date().toISOString();
-      setInboxWarnings((current) => current.map((item) => ({ ...item, read_at: item.read_at || readAt })));
-      setUnreadWarningCount(0);
+      if (isStaff) {
+        setInboxWarnings((current) => current.map((item) => ({ ...item, read_at: item.read_at || readAt })));
+        setUnreadWarningCount(0);
+      } else {
+        setInboxAttendances((current) => current.map((item) => ({ ...item, is_read: true })));
+        setUnreadAttendanceCount(0);
+      }
     } catch (error: unknown) {
       toast.error('Pesan gagal diperbarui', error instanceof Error ? error.message : 'Silakan coba lagi.');
     } finally {
@@ -267,13 +321,19 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
           <button
             onClick={toggleInbox}
             className="relative p-2.5 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-            aria-label={isStaff ? `Buka inbox, ${unreadWarningCount} pesan belum dibaca` : 'Lihat notifikasi'}
+            aria-label={isStaff
+              ? `Buka inbox, ${unreadWarningCount} pesan belum dibaca`
+              : user?.role === 'ADMIN'
+                ? `Buka inbox, ${unreadAttendanceCount} notifikasi absensi belum dibaca`
+                : 'Lihat notifikasi'}
             aria-expanded={notificationsOpen}
           >
             <Bell className="w-5 h-5" />
-            {isStaff && unreadWarningCount > 0 && (
+            {(isStaff ? unreadWarningCount : user?.role === 'ADMIN' ? unreadAttendanceCount : 0) > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white ring-2 ring-white">
-                {unreadWarningCount > 9 ? '9+' : unreadWarningCount}
+                {(isStaff ? unreadWarningCount : unreadAttendanceCount) > 9
+                  ? '9+'
+                  : isStaff ? unreadWarningCount : unreadAttendanceCount}
               </span>
             )}
           </button>
@@ -281,11 +341,13 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
           {notificationsOpen && (
             <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white py-3 shadow-xl animate-scale-in">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
-                <span className="text-sm font-bold text-slate-800">{isStaff ? 'Inbox Peringatan' : 'Notifikasi'}</span>
-                {isStaff && unreadWarningCount > 0 && (
+                <span className="text-sm font-bold text-slate-800">
+                  {isStaff ? 'Inbox Peringatan' : user?.role === 'ADMIN' ? 'Inbox Absensi' : 'Notifikasi'}
+                </span>
+                {(isStaff ? unreadWarningCount : user?.role === 'ADMIN' ? unreadAttendanceCount : 0) > 0 && (
                   <button
                     type="button"
-                    onClick={() => void markAllWarningsRead()}
+                    onClick={() => void markAllInboxRead()}
                     disabled={isMarkingRead}
                     className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
                   >
@@ -294,7 +356,7 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
                 )}
               </div>
               <div className="max-h-[min(65vh,28rem)] overflow-y-auto p-2">
-                {isStaff ? (
+                {isStaff || user?.role === 'ADMIN' ? (
                   isInboxLoading ? (
                     <p className="p-4 text-center text-xs text-slate-500">Memuat pesan...</p>
                   ) : inboxError ? (
@@ -308,12 +370,12 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
                         Coba lagi
                       </button>
                     </div>
-                  ) : inboxWarnings.length === 0 ? (
+                  ) : isStaff && inboxWarnings.length === 0 ? (
                     <div className="p-5 text-center">
                       <MailOpen className="mx-auto h-6 w-6 text-slate-300" />
                       <p className="mt-2 text-xs text-slate-500">Inbox belum memiliki pesan peringatan.</p>
                     </div>
-                  ) : (
+                  ) : isStaff ? (
                     <div className="space-y-1">
                       {inboxWarnings.map((warning) => (
                         <button
@@ -332,7 +394,9 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-bold text-slate-800">Peringatan dari admin</span>
+                              <span className="text-xs font-bold text-slate-800">
+                                Peringatan - {warning.warning_number}
+                              </span>
                               {!warning.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />}
                             </span>
                             <span className="mt-1 block whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600">
@@ -343,6 +407,40 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
                             </span>
                           </span>
                         </button>
+                      ))}
+                    </div>
+                  ) : inboxAttendances.length === 0 ? (
+                    <div className="p-5 text-center">
+                      <MailOpen className="mx-auto h-6 w-6 text-slate-300" />
+                      <p className="mt-2 text-xs text-slate-500">Belum ada user yang baru absen.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {inboxAttendances.map((attendance) => (
+                        <div
+                          key={attendance.id}
+                          className={`flex items-start gap-3 rounded-xl p-3 ${
+                            attendance.is_read ? 'bg-white' : 'bg-blue-50/70'
+                          }`}
+                        >
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                            <UserCheck className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="text-xs font-bold text-slate-800">
+                              {attendance.username} telah absen
+                              {!attendance.is_read && (
+                                <span className="ml-2 inline-block h-2 w-2 rounded-full bg-blue-600" />
+                              )}
+                            </span>
+                            <span className="mt-1 block text-[11px] text-slate-600">
+                              Pada jam {attendance.attendance_time.slice(0, 5)} WIB
+                            </span>
+                            <span className="mt-1 block text-[10px] text-slate-400">
+                              {formatIndonesianDate(attendance.attendance_date)}
+                            </span>
+                          </span>
+                        </div>
                       ))}
                     </div>
                   )

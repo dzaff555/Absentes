@@ -35,6 +35,7 @@ interface StaffProfile {
 }
 
 interface StaffWarning {
+  warning_number: number;
   reason: string;
   warning_date: string;
   warning_time: string;
@@ -80,7 +81,12 @@ export default async function AdminStaffProfilePage({
     countWeekendDaysSince(staff.joined_date, attendanceThroughDate) - Number(staff.weekend_attendance_count)
   );
   const warnings = await query<StaffWarning[]>(
-    `SELECT w.reason, DATE_FORMAT(w.created_at, '%Y-%m-%d') AS warning_date,
+    `SELECT
+       (SELECT COUNT(*) FROM staff_warnings previous
+        WHERE previous.user_id = w.user_id
+          AND (previous.created_at < w.created_at
+            OR (previous.created_at = w.created_at AND previous.id <= w.id))) AS warning_number,
+       w.reason, DATE_FORMAT(w.created_at, '%Y-%m-%d') AS warning_date,
        DATE_FORMAT(w.created_at, '%H:%i:%s') AS warning_time,
        issuer.username AS issued_by_username
      FROM staff_warnings w
@@ -214,7 +220,8 @@ export default async function AdminStaffProfilePage({
                 <ul className="mt-4 divide-y divide-slate-100">
                   {warnings.map((warning, index) => (
                     <li key={`${warning.warning_date}-${warning.warning_time}-${index}`} className="py-3 first:pt-0 last:pb-0">
-                      <p className="text-sm font-medium text-slate-800">{warning.reason}</p>
+                      <p className="text-sm font-semibold text-slate-800">Peringatan - {warning.warning_number}</p>
+                      <p className="mt-1 text-sm text-slate-700">{warning.reason}</p>
                       <p className="mt-1 text-xs text-slate-500">
                         {formatIndonesianDateTime(warning.warning_date, warning.warning_time)} · Oleh {warning.issued_by_username || 'Admin'}
                       </p>

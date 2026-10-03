@@ -4,11 +4,20 @@ import { query } from '@/lib/database/db';
 
 interface InboxWarning {
   id: number;
+  warning_number: number;
   reason: string;
   warning_date: string;
   warning_time: string;
   read_at: string | null;
   issued_by_username: string | null;
+}
+
+interface AttendanceInboxItem {
+  id: number;
+  username: string;
+  attendance_date: string;
+  attendance_time: string;
+  is_read: boolean;
 }
 
 export async function GET() {
@@ -21,6 +30,46 @@ export async function GET() {
       );
     }
 
+    if (session.role === 'ADMIN') {
+      await query(
+        `INSERT IGNORE INTO admin_attendance_inbox (admin_id, read_through_id)
+         SELECT ?, COALESCE((SELECT MAX(id) FROM attendance), 0)`,
+        [session.id]
+      );
+      const cursorRows = await query<{ read_through_id: number }[]>(
+        'SELECT read_through_id FROM admin_attendance_inbox WHERE admin_id = ?',
+        [session.id]
+      );
+      const readThroughId = Number(cursorRows[0]?.read_through_id || 0);
+
+      const [attendances, unreadRows] = await Promise.all([
+        query<AttendanceInboxItem[]>(
+          `SELECT a.id, u.username,
+             DATE_FORMAT(a.attendance_date, '%Y-%m-%d') AS attendance_date,
+             TIME_FORMAT(a.attendance_time, '%H:%i:%s') AS attendance_time,
+             (a.id <= ?) AS is_read
+           FROM attendance a
+           JOIN users u ON u.id = a.user_id
+           WHERE u.role = 'USER' AND a.status = 'Hadir'
+           ORDER BY a.id DESC
+           LIMIT 50`,
+          [readThroughId]
+        ),
+        query<{ total: number }[]>(
+          `SELECT COUNT(*) AS total
+           FROM attendance a
+           JOIN users u ON u.id = a.user_id
+           WHERE a.id > ? AND u.role = 'USER' AND a.status = 'Hadir'`,
+          [readThroughId]
+        ),
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        data: { attendances, unreadCount: Number(unreadRows[0]?.total || 0) },
+      });
+    }
+
     if (session.role !== 'USER') {
       return NextResponse.json(
         { success: false, error: 'Inbox peringatan hanya tersedia untuk akun staff.' },
@@ -30,7 +79,12 @@ export async function GET() {
 
     const [warnings, unreadRows] = await Promise.all([
       query<InboxWarning[]>(
-        `SELECT w.id, w.reason,
+        `SELECT w.id,
+           (SELECT COUNT(*) FROM staff_warnings previous
+            WHERE previous.user_id = w.user_id
+              AND (previous.created_at < w.created_at
+                OR (previous.created_at = w.created_at AND previous.id <= w.id))) AS warning_number,
+           w.reason,
            DATE_FORMAT(w.created_at, '%Y-%m-%d') AS warning_date,
            DATE_FORMAT(w.created_at, '%H:%i:%s') AS warning_time,
            DATE_FORMAT(w.read_at, '%Y-%m-%d %H:%i:%s') AS read_at,
@@ -67,6 +121,33 @@ export async function PATCH(request: Request) {
         { success: false, error: 'Silakan login terlebih dahulu.' },
         { status: 401 }
       );
+    }
+    if (session.role === 'ADMIN') {
+      let adminBody: unknown;
+      try {
+        adminBody = await request.json();
+      } catch {
+        return NextResponse.json({ success: false, error: 'Permintaan tidak valid.' }, { status: 400 });
+      }
+      if (typeof adminBody !== 'object' || adminBody === null || !('all' in adminBody) || adminBody.all !== true) {
+        return NextResponse.json(
+          { success: false, error: 'Permintaan menandai notifikasi tidak valid.' },
+          { status: 400 }
+        );
+      }
+
+      await query(
+        `INSERT IGNORE INTO admin_attendance_inbox (admin_id, read_through_id)
+         SELECT ?, COALESCE((SELECT MAX(id) FROM attendance), 0)`,
+        [session.id]
+      );
+      await query(
+        `UPDATE admin_attendance_inbox
+         SET read_through_id = GREATEST(read_through_id, COALESCE((SELECT MAX(id) FROM attendance), 0))
+         WHERE admin_id = ?`,
+        [session.id]
+      );
+      return NextResponse.json({ success: true, message: 'Semua notifikasi absensi ditandai sudah dibaca.' });
     }
     if (session.role !== 'USER') {
       return NextResponse.json(

@@ -46,6 +46,8 @@ attendance days since account creation (excluding an attendance window that has
 not closed yet), and recorded admin warnings. Admins can add a warning with a
 required reason from the account profile; warning records are created automatically
 when the app initializes the database.
+Admins also receive inbox notifications when a user records a new attendance;
+notifications are checked every 30 seconds and can be marked read from the bell menu.
 
 The Railway `absentes` app service is not needed when Vercel runs the full Next.js
 application. Keep the Railway MySQL service running. Do not remove the app service

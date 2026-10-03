@@ -176,6 +176,20 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS admin_attendance_inbox (
+        admin_id INT PRIMARY KEY,
+        read_through_id INT NOT NULL DEFAULT 0,
+        CONSTRAINT fk_admin_attendance_inbox_user FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await dbPool.query(`
+      INSERT IGNORE INTO admin_attendance_inbox (admin_id, read_through_id)
+      SELECT u.id, COALESCE((SELECT MAX(a.id) FROM attendance a), 0)
+      FROM users u
+      WHERE u.role = 'ADMIN'
+    `);
+
     await ensureColumns(dbPool, [
       { table: 'users', column: 'attendance_role', definition: "ENUM('CSOT', 'PPKA', 'MASINIS', 'PKD', 'PJL') NOT NULL DEFAULT 'CSOT'" },
       { table: 'users', column: 'profile_photo', definition: 'LONGTEXT NULL' },

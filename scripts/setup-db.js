@@ -45,6 +45,7 @@ async function setup() {
       }
       await db.query(sqlDump);
       await ensureStaffWarningsTable(db);
+      await ensureAdminAttendanceInboxTable(db);
       await db.end();
       console.log('🎉 SQL dump imported successfully!');
       return;
@@ -108,6 +109,7 @@ async function setup() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     await ensureStaffWarningsTable(db);
+    await ensureAdminAttendanceInboxTable(db);
 
     console.log('🌱 Checking seed admin account...');
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
@@ -163,5 +165,21 @@ async function ensureStaffWarningsTable(db) {
   const [readAtColumn] = await db.query("SHOW COLUMNS FROM staff_warnings LIKE 'read_at'");
   if (readAtColumn.length === 0) {
     await db.query('ALTER TABLE staff_warnings ADD COLUMN read_at TIMESTAMP NULL DEFAULT NULL AFTER reason');
+  }
+
+  async function ensureAdminAttendanceInboxTable(db) {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS admin_attendance_inbox (
+        admin_id INT PRIMARY KEY,
+        read_through_id INT NOT NULL DEFAULT 0,
+        CONSTRAINT fk_admin_attendance_inbox_user FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    await db.query(`
+      INSERT IGNORE INTO admin_attendance_inbox (admin_id, read_through_id)
+      SELECT u.id, COALESCE((SELECT MAX(a.id) FROM attendance a), 0)
+      FROM users u
+      WHERE u.role = 'ADMIN'
+    `);
   }
 }
