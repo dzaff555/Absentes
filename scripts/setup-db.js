@@ -39,11 +39,12 @@ async function setup() {
     if (fs.existsSync(sqlPath)) {
       const sqlDump = fs.readFileSync(sqlPath, 'utf8');
       console.log(`📝 Importing SQL dump from ${path.relative(process.cwd(), sqlPath)}...`);
-      const tablesToDrop = ['chat_messages', 'chat_group_members', 'chat_groups', 'attendance', 'password_reset_tokens', 'users'];
+      const tablesToDrop = ['chat_messages', 'chat_group_members', 'chat_groups', 'staff_warnings', 'attendance', 'password_reset_tokens', 'users'];
       for (const table of tablesToDrop) {
         await db.query(`DROP TABLE IF EXISTS \`${table}\`;`);
       }
       await db.query(sqlDump);
+      await ensureStaffWarningsTable(db);
       await db.end();
       console.log('🎉 SQL dump imported successfully!');
       return;
@@ -106,6 +107,7 @@ async function setup() {
         INDEX idx_token (token)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    await ensureStaffWarningsTable(db);
 
     console.log('🌱 Checking seed admin account...');
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
@@ -143,3 +145,18 @@ async function setup() {
 }
 
 setup();
+
+async function ensureStaffWarningsTable(db) {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS staff_warnings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      issued_by INT NULL,
+      reason VARCHAR(1000) NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_staff_warning_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
+      INDEX idx_staff_warnings_user_created (user_id, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+}

@@ -5,6 +5,7 @@ import { query } from '@/lib/database/db';
 interface StaffCard {
   id: number;
   username: string;
+  role: 'USER' | 'ADMIN';
   attendance_role: string | null;
   profile_photo: string | null;
 }
@@ -21,10 +22,10 @@ export default async function StaffDirectoryPage({
   const offset = (page - 1) * pageSize;
 
   const [countRows, staff] = await Promise.all([
-    query<{ total: number }[]>("SELECT COUNT(*) AS total FROM users WHERE role = 'USER' AND status = 'ACTIVE'"),
+    query<{ total: number }[]>("SELECT COUNT(*) AS total FROM users WHERE status = 'ACTIVE'"),
     query<StaffCard[]>(
-      `SELECT id, username, attendance_role, profile_photo
-       FROM users WHERE role = 'USER' AND status = 'ACTIVE'
+      `SELECT id, username, role, attendance_role, profile_photo
+       FROM users WHERE status = 'ACTIVE'
        ORDER BY username ASC LIMIT ? OFFSET ?`,
       [pageSize, offset]
     ),
@@ -47,7 +48,7 @@ export default async function StaffDirectoryPage({
           </div>
           <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700">
             <Users className="h-4 w-4 text-blue-600" />
-            {totalStaff} staff aktif
+            {totalStaff} akun aktif
           </div>
         </div>
 
@@ -76,7 +77,9 @@ export default async function StaffDirectoryPage({
                 )}
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-bold text-slate-900">{member.username}</span>
-                  <span className="mt-0.5 truncate text-xs text-slate-500">{member.attendance_role || 'Role belum ditentukan'}</span>
+                  <span className="mt-0.5 truncate text-xs text-slate-500">
+                    {member.role === 'ADMIN' ? 'Administrator' : member.attendance_role || 'Role belum ditentukan'}
+                  </span>
                 </span>
                 <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
               </Link>

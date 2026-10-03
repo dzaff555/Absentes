@@ -45,3 +45,15 @@ CREATE TABLE IF NOT EXISTS attendance (
   INDEX idx_attendance_date (attendance_date),
   INDEX idx_attendance_user_date (user_id, attendance_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: staff warnings
+CREATE TABLE IF NOT EXISTS staff_warnings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  issued_by INT NULL,
+  reason VARCHAR(1000) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_staff_warning_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_staff_warnings_user_created (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

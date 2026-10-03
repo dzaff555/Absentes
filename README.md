@@ -39,6 +39,12 @@ The **Lupa Password** form does not send email. It verifies the username and cur
 password, then saves the new password after confirmation. `NEXT_PUBLIC_APP_URL` is
 optional and is only used for displaying the application URL in admin settings.
 
+Staff profiles count attendance records marked `Hadir`, missed Friday–Sunday
+attendance days since account creation (excluding an attendance window that has
+not closed yet), and recorded admin warnings. Admins can add a warning with a
+required reason from the account profile; warning records are created automatically
+when the app initializes the database.
+
 The Railway `absentes` app service is not needed when Vercel runs the full Next.js
 application. Keep the Railway MySQL service running. Do not remove the app service
 until the Vercel deployment has been verified.

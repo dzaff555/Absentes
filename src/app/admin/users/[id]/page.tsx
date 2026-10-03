@@ -1,9 +1,19 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { ArrowLeft, CalendarDays, ShieldCheck, UserRound } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  ShieldCheck,
+  UserRound,
+  XCircle,
+} from 'lucide-react';
 import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
-import { formatIndonesianDate } from '@/lib/utils/date';
+import { IssueWarningForm } from '@/components/profile/IssueWarningForm';
+import { countWeekendDaysSince, getLastCompletedAttendanceDate } from '@/lib/attendance/stats';
+import { formatIndonesianDate, formatIndonesianDateTime } from '@/lib/utils/date';
 
 interface StaffProfile {
   id: number;
@@ -16,8 +26,19 @@ interface StaffProfile {
   discord_username: string | null;
   profile_completed: number | boolean;
   created_at: string;
+  joined_date: string;
+  attendance_count: number;
+  weekend_attendance_count: number;
+  warning_count: number;
   last_attendance: string | null;
   last_attendance_status: string | null;
+}
+
+interface StaffWarning {
+  reason: string;
+  warning_date: string;
+  warning_time: string;
+  issued_by_username: string | null;
 }
 
 export default async function AdminStaffProfilePage({
@@ -32,19 +53,43 @@ export default async function AdminStaffProfilePage({
   const userId = Number.parseInt(id, 10);
   if (!Number.isInteger(userId)) notFound();
 
+  const attendanceThroughDate = getLastCompletedAttendanceDate();
   const users = await query<StaffProfile[]>(
     `SELECT u.id, u.username, u.role, u.status, u.attendance_role, u.profile_photo,
       u.roblox_username, u.discord_username, u.profile_completed,
       DATE_FORMAT(u.created_at, '%Y-%m-%d %H:%i') AS created_at,
+      DATE_FORMAT(u.created_at, '%Y-%m-%d') AS joined_date,
+      (SELECT COUNT(*) FROM attendance a
+       WHERE a.user_id = u.id AND a.status = 'Hadir') AS attendance_count,
+      (SELECT COUNT(*) FROM attendance a
+       WHERE a.user_id = u.id AND a.status = 'Hadir'
+         AND a.attendance_date BETWEEN DATE(u.created_at) AND ?
+         AND DAYOFWEEK(a.attendance_date) IN (1, 6, 7)) AS weekend_attendance_count,
+      (SELECT COUNT(*) FROM staff_warnings w WHERE w.user_id = u.id) AS warning_count,
       (SELECT DATE_FORMAT(a.attendance_date, '%Y-%m-%d') FROM attendance a
        WHERE a.user_id = u.id ORDER BY a.attendance_date DESC, a.attendance_time DESC LIMIT 1) AS last_attendance,
       (SELECT a.status FROM attendance a
        WHERE a.user_id = u.id ORDER BY a.attendance_date DESC, a.attendance_time DESC LIMIT 1) AS last_attendance_status
      FROM users u WHERE u.id = ? LIMIT 1`,
-    [userId]
+    [attendanceThroughDate, userId]
   );
   const staff = users[0];
   if (!staff) notFound();
+  const missedAttendanceCount = Math.max(
+    0,
+    countWeekendDaysSince(staff.joined_date, attendanceThroughDate) - Number(staff.weekend_attendance_count)
+  );
+  const warnings = await query<StaffWarning[]>(
+    `SELECT w.reason, DATE_FORMAT(w.created_at, '%Y-%m-%d') AS warning_date,
+       DATE_FORMAT(w.created_at, '%H:%i:%s') AS warning_time,
+       issuer.username AS issued_by_username
+     FROM staff_warnings w
+     LEFT JOIN users issuer ON issuer.id = w.issued_by
+     WHERE w.user_id = ?
+     ORDER BY w.created_at DESC, w.id DESC
+     LIMIT 5`,
+    [userId]
+  );
 
   return (
     <>
@@ -115,7 +160,62 @@ export default async function AdminStaffProfilePage({
                   : 'Belum pernah absen'}
               </p>
             </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Total Hadir
+              </div>
+              <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.attendance_count)}</p>
+              <p className="mt-1 text-xs text-slate-500">kali tercatat hadir</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <XCircle className="h-4 w-4 text-rose-600" /> Tidak Hadir
+              </div>
+              <p className="mt-2 text-2xl font-extrabold text-slate-800">{missedAttendanceCount}</p>
+              <p className="mt-1 text-xs text-slate-500">hari Jumat–Minggu tanpa catatan hadir</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <AlertTriangle className="h-4 w-4 text-amber-600" /> Peringatan
+              </div>
+              <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.warning_count)}</p>
+              <p className="mt-1 text-xs text-slate-500">kali diperingatkan oleh admin</p>
+            </div>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-extrabold text-slate-900">Beri Peringatan</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Setiap peringatan akan tersimpan di riwayat profil dan menambah total peringatan.
+          </p>
+          {staff.status !== 'ACTIVE' ? (
+            <p className="mt-4 text-sm text-slate-500">Akun nonaktif tidak dapat diberi peringatan.</p>
+          ) : session.id === staff.id ? (
+            <p className="mt-4 text-sm text-slate-500">Anda tidak dapat memberi peringatan pada akun sendiri.</p>
+          ) : (
+            <div className="mt-4">
+              <IssueWarningForm userId={staff.id} />
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-lg font-extrabold text-slate-900">Riwayat Peringatan</h2>
+          {warnings.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-500">Belum ada peringatan.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {warnings.map((warning, index) => (
+                <li key={`${warning.warning_date}-${warning.warning_time}-${index}`} className="py-3 first:pt-0 last:pb-0">
+                  <p className="text-sm font-medium text-slate-800">{warning.reason}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {formatIndonesianDateTime(warning.warning_date, warning.warning_time)} · Oleh {warning.issued_by_username || 'Admin'}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
       </div>

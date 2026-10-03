@@ -22,6 +22,7 @@ import { useToast } from '../ui/Toast';
 interface SidebarStaff {
   id: number;
   username: string;
+  role: 'USER' | 'ADMIN';
   attendance_role: string;
   profile_photo: string | null;
 }
@@ -200,7 +201,7 @@ export function Sidebar({
                 key={staff.id}
                 href={isAdmin ? `/admin/users/${staff.id}` : `/staff/${staff.id}`}
                 onClick={() => setMobileOpen(false)}
-                title={collapsed ? `${staff.username}${isCurrentStaff(staff) ? ' (You)' : ''} · ${staff.attendance_role}` : undefined}
+                title={collapsed ? `${staff.username}${isCurrentStaff(staff) ? ' (You)' : ''} · ${staff.role === 'ADMIN' ? 'Administrator' : staff.attendance_role}` : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/8 hover:text-white ${collapsed ? 'justify-center px-0' : ''}`}
               >
                 {staff.profile_photo ? (
@@ -219,7 +220,9 @@ export function Sidebar({
                     <span className="truncate font-semibold text-white">
                       {staff.username}{isCurrentStaff(staff) ? ' (You)' : ''}
                     </span>
-                    <span className="truncate text-[11px] text-slate-400">{staff.attendance_role}</span>
+                    <span className="truncate text-[11px] text-slate-400">
+                      {staff.role === 'ADMIN' ? 'Administrator' : staff.attendance_role}
+                    </span>
                   </span>
                 )}
               </Link>

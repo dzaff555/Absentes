@@ -1,16 +1,22 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, CalendarDays, UserRound } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ShieldCheck, UserRound, XCircle } from 'lucide-react';
 import { query } from '@/lib/database/db';
+import { countWeekendDaysSince, getLastCompletedAttendanceDate } from '@/lib/attendance/stats';
 import { formatIndonesianDate } from '@/lib/utils/date';
 
 interface StaffProfile {
   id: number;
   username: string;
+  role: 'USER' | 'ADMIN';
   attendance_role: string | null;
   profile_photo: string | null;
   roblox_username: string | null;
   discord_username: string | null;
+  joined_date: string;
+  attendance_count: number;
+  weekend_attendance_count: number;
+  warning_count: number;
   last_attendance: string | null;
   last_attendance_status: string | null;
 }
@@ -24,18 +30,31 @@ export default async function StaffProfilePage({
   const staffId = Number.parseInt(id, 10);
   if (!Number.isInteger(staffId)) notFound();
 
+  const attendanceThroughDate = getLastCompletedAttendanceDate();
   const staffRows = await query<StaffProfile[]>(
-    `SELECT u.id, u.username, u.attendance_role, u.profile_photo,
+    `SELECT u.id, u.username, u.role, u.attendance_role, u.profile_photo,
       u.roblox_username, u.discord_username,
+      DATE_FORMAT(u.created_at, '%Y-%m-%d') AS joined_date,
+      (SELECT COUNT(*) FROM attendance a
+       WHERE a.user_id = u.id AND a.status = 'Hadir') AS attendance_count,
+      (SELECT COUNT(*) FROM attendance a
+       WHERE a.user_id = u.id AND a.status = 'Hadir'
+         AND a.attendance_date BETWEEN DATE(u.created_at) AND ?
+         AND DAYOFWEEK(a.attendance_date) IN (1, 6, 7)) AS weekend_attendance_count,
+      (SELECT COUNT(*) FROM staff_warnings w WHERE w.user_id = u.id) AS warning_count,
       (SELECT DATE_FORMAT(a.attendance_date, '%Y-%m-%d') FROM attendance a
        WHERE a.user_id = u.id ORDER BY a.attendance_date DESC, a.attendance_time DESC LIMIT 1) AS last_attendance,
       (SELECT a.status FROM attendance a
        WHERE a.user_id = u.id ORDER BY a.attendance_date DESC, a.attendance_time DESC LIMIT 1) AS last_attendance_status
-     FROM users u WHERE u.id = ? AND u.role = 'USER' AND u.status = 'ACTIVE' LIMIT 1`,
-    [staffId]
+     FROM users u WHERE u.id = ? AND u.status = 'ACTIVE' LIMIT 1`,
+    [attendanceThroughDate, staffId]
   );
   const staff = staffRows[0];
   if (!staff) notFound();
+  const missedAttendanceCount = Math.max(
+    0,
+    countWeekendDaysSince(staff.joined_date, attendanceThroughDate) - Number(staff.weekend_attendance_count)
+  );
 
   return (
     <>
@@ -61,7 +80,10 @@ export default async function StaffProfilePage({
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-blue-200">Profil Staff</p>
               <h1 className="mt-1 text-2xl font-extrabold">{staff.username}</h1>
-              <p className="mt-1 text-sm text-blue-100">{staff.attendance_role || 'Role belum ditentukan'}</p>
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-blue-100">
+                {staff.role === 'ADMIN' && <ShieldCheck className="h-4 w-4" />}
+                {staff.role === 'ADMIN' ? 'Admin' : staff.attendance_role || 'Role belum ditentukan'}
+              </p>
             </div>
           </div>
 
@@ -87,6 +109,27 @@ export default async function StaffProfilePage({
                   ? `${formatIndonesianDate(staff.last_attendance)} · ${staff.last_attendance_status || 'Tercatat'}`
                   : 'Belum pernah absen'}
               </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Total Hadir
+              </div>
+              <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.attendance_count)}</p>
+              <p className="mt-1 text-xs text-slate-500">kali tercatat hadir</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <XCircle className="h-4 w-4 text-rose-600" /> Tidak Hadir
+              </div>
+              <p className="mt-2 text-2xl font-extrabold text-slate-800">{missedAttendanceCount}</p>
+              <p className="mt-1 text-xs text-slate-500">hari Jumat–Minggu tanpa catatan hadir</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <AlertTriangle className="h-4 w-4 text-amber-600" /> Peringatan
+              </div>
+              <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.warning_count)}</p>
+              <p className="mt-1 text-xs text-slate-500">kali diperingatkan oleh admin</p>
             </div>
           </div>
         </section>

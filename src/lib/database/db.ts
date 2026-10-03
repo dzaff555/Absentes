@@ -162,6 +162,19 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    await dbPool.query(`
+      CREATE TABLE IF NOT EXISTS staff_warnings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        issued_by INT NULL,
+        reason VARCHAR(1000) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_staff_warning_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_staff_warnings_user_created (user_id, created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     await ensureColumns(dbPool, [
       { table: 'users', column: 'attendance_role', definition: "ENUM('CSOT', 'PPKA', 'MASINIS', 'PKD', 'PJL') NOT NULL DEFAULT 'CSOT'" },
       { table: 'users', column: 'profile_photo', definition: 'LONGTEXT NULL' },

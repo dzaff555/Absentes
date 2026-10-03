@@ -16,17 +16,18 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
 
     const countRows = await query<{ total: number }[]>(
-      "SELECT COUNT(*) AS total FROM users WHERE role = 'USER' AND status = 'ACTIVE'"
+      "SELECT COUNT(*) AS total FROM users WHERE status = 'ACTIVE'"
     );
     const totalStaff = countRows[0]?.total || 0;
     const records = await query<{
       id: number;
       username: string;
+      role: 'USER' | 'ADMIN';
       attendance_role: string | null;
       profile_photo: string | null;
     }[]>(
-      `SELECT id, username, attendance_role, profile_photo
-       FROM users WHERE role = 'USER' AND status = 'ACTIVE'
+      `SELECT id, username, role, attendance_role, profile_photo
+       FROM users WHERE status = 'ACTIVE'
        ORDER BY username ASC LIMIT ? OFFSET ?`,
       [limit, offset]
     );
