@@ -16,7 +16,6 @@ export default function AdminSettingsPage() {
   const toast = useToast();
   // Profile edit states
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -36,7 +35,6 @@ export default function AdminSettingsPage() {
       if (data.success) {
         if (data.data.user) {
           setUsername(data.data.user.username || '');
-          setEmail(data.data.user.email || '');
         }
       }
     } catch (err) {
@@ -51,7 +49,7 @@ export default function AdminSettingsPage() {
     setIsSaving(true);
 
     try {
-      const payload: any = { username, email };
+      const payload: Record<string, string> = { username };
       if (newPassword) {
         payload.currentPassword = currentPassword;
         payload.newPassword = newPassword;
@@ -110,19 +108,11 @@ export default function AdminSettingsPage() {
 
           <CardContent>
             <form onSubmit={handleSaveProfile} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <Input
                   label="Username Admin"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-
-                <Input
-                  type="email"
-                  label="Email Admin"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>

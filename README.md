@@ -38,6 +38,8 @@ needed, so the MySQL account must have permission to create databases.
 The **Lupa Password** form does not send email. It verifies the username and current
 password, then saves the new password after confirmation. `NEXT_PUBLIC_APP_URL` is
 optional and is only used for displaying the application URL in admin settings.
+Email is no longer requested or displayed in account forms, profiles, or reports.
+Existing email values remain in the database for users who still sign in with email.
 
 Staff profiles count attendance records marked `Hadir`, missed Friday–Sunday
 attendance days since account creation (excluding an attendance window that has

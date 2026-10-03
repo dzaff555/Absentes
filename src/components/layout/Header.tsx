@@ -213,7 +213,6 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-scale-in">
               <div className="px-4 py-2 border-b border-slate-100 mb-1">
                 <p className="text-xs font-bold text-slate-800">{user?.username}</p>
-                <p className="text-[11px] text-slate-500 truncate">{user?.email || 'Email tidak tersedia'}</p>
               </div>
 
               {user?.role === 'ADMIN' && (

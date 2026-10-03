@@ -16,7 +16,6 @@ export async function GET() {
     const rows = await query<{
       id: number;
       username: string;
-      email: string | null;
       role: 'USER' | 'ADMIN';
       attendance_role: string | null;
       profile_photo: string | null;
@@ -24,7 +23,7 @@ export async function GET() {
       discord_username: string | null;
       profile_completed: boolean;
     }[]>(
-      'SELECT id, username, email, role, attendance_role, profile_photo, roblox_username, discord_username, profile_completed FROM users WHERE id = ? LIMIT 1',
+      'SELECT id, username, role, attendance_role, profile_photo, roblox_username, discord_username, profile_completed FROM users WHERE id = ? LIMIT 1',
       [session.id]
     );
 
@@ -38,7 +37,6 @@ export async function GET() {
       data: {
         id: user.id,
         username: user.username,
-        email: user.email || '',
         role: user.role,
         attendance_role: user.attendance_role || 'CSOT',
         profile_photo: user.profile_photo || '',

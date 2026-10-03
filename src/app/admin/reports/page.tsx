@@ -24,7 +24,6 @@ type AttendanceReportRecord = {
   attendance_time: string;
   status: string;
   username: string;
-  email: string | null;
   profile_photo?: string | null;
 };
 

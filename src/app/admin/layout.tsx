@@ -17,7 +17,7 @@ export default async function AdminLayout({
   if (!session || session.role !== 'ADMIN') redirect('/login');
 
   const users = await query<AdminLayoutUser[]>(
-    `SELECT id, username, email, role, status, attendance_role,
+    `SELECT id, username, role, status, attendance_role,
       profile_photo, roblox_username, discord_username, profile_completed
      FROM users
      WHERE id = ? AND role = 'ADMIN' AND status = 'ACTIVE'

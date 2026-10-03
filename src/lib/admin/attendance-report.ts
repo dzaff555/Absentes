@@ -21,7 +21,6 @@ export interface AttendanceReportRecord {
   attendance_time: string;
   status: string;
   username: string;
-  email: string | null;
   profile_photo: string | null;
 }
 
@@ -150,14 +149,14 @@ function buildAttendanceReportQuery(filters: AttendanceReportFilters): Attendanc
     const term = `%${search}%`;
     if (isAbsent) {
       whereConditions.push(
-        '(u.username LIKE ? OR u.email LIKE ? OR u.attendance_role LIKE ? OR u.discord_username LIKE ? OR u.roblox_username LIKE ?)'
+        '(u.username LIKE ? OR u.attendance_role LIKE ? OR u.discord_username LIKE ? OR u.roblox_username LIKE ?)'
       );
-      params.push(term, term, term, term, term);
+      params.push(term, term, term, term);
     } else {
       whereConditions.push(
-        '(a.name LIKE ? OR a.attendance_role LIKE ? OR a.discord_username LIKE ? OR a.roblox_username LIKE ? OR u.username LIKE ? OR u.email LIKE ?)'
+        '(a.name LIKE ? OR a.attendance_role LIKE ? OR a.discord_username LIKE ? OR a.roblox_username LIKE ? OR u.username LIKE ?)'
       );
-      params.push(term, term, term, term, term, term);
+      params.push(term, term, term, term, term);
     }
   }
 
@@ -184,7 +183,6 @@ function getReportSelect(isAbsent: boolean): string {
         '-' AS attendance_time,
         'Belum Absen' AS status,
         u.username,
-        u.email,
         u.profile_photo
     `;
   }
@@ -201,7 +199,6 @@ function getReportSelect(isAbsent: boolean): string {
       a.attendance_time,
       a.status,
       u.username,
-      u.email,
       u.profile_photo
   `;
 }

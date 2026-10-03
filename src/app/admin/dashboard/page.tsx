@@ -494,13 +494,6 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 block font-medium">Email</span>
-                  <span className="font-semibold text-slate-800 mt-0.5 block truncate">
-                    {selectedRecord.email}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-400 block font-medium">Username Discord</span>
                   <span className="font-mono font-semibold text-indigo-600 mt-0.5 block">
                     {selectedRecord.discord_username}

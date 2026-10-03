@@ -18,7 +18,7 @@ export default async function UserLayout({
   if (session.role === 'ADMIN') redirect('/admin/dashboard');
 
   const users = await query<UserLayoutSession[]>(
-    `SELECT id, username, COALESCE(email, '') AS email, role, status,
+    `SELECT id, username, role, status,
       attendance_role, profile_photo, roblox_username, discord_username,
       profile_completed
      FROM users

@@ -35,7 +35,6 @@ export async function GET(request: Request) {
       { header: 'Nama Lengkap', key: 'name', width: 24 },
       { header: 'User ID', key: 'userId', width: 12 },
       { header: 'Username', key: 'username', width: 20 },
-      { header: 'Email', key: 'email', width: 30 },
       { header: 'Role Absensi', key: 'attendanceRole', width: 18 },
       { header: 'Discord', key: 'discord', width: 22 },
       { header: 'Roblox', key: 'roblox', width: 22 },
@@ -50,7 +49,6 @@ export async function GET(request: Request) {
         name: record.name,
         userId: record.user_id,
         username: record.username,
-        email: record.email,
         attendanceRole: record.attendance_role,
         discord: record.discord_username,
         roblox: record.roblox_username,
@@ -75,7 +73,7 @@ export async function GET(request: Request) {
     header.alignment = { vertical: 'middle', horizontal: 'center' };
     sheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: Math.max(records.length + 1, 1), column: 11 },
+      to: { row: Math.max(records.length + 1, 1), column: 10 },
     };
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
 

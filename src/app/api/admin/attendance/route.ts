@@ -31,9 +31,9 @@ export async function GET(request: Request) {
     const params: any[] = [todayDate];
 
     if (search) {
-      baseSql += ' AND (u.username LIKE ? OR u.email LIKE ? OR a.name LIKE ? OR a.discord_username LIKE ? OR a.roblox_username LIKE ?)';
+      baseSql += ' AND (u.username LIKE ? OR a.name LIKE ? OR a.discord_username LIKE ? OR a.roblox_username LIKE ?)';
       const term = `%${search}%`;
-      params.push(term, term, term, term, term);
+      params.push(term, term, term, term);
     }
 
     if (status === 'HADIR') {
@@ -53,7 +53,6 @@ export async function GET(request: Request) {
       SELECT 
         u.id as user_id,
         u.username,
-        u.email,
         COALESCE(a.name, u.username) as name,
         COALESCE(a.discord_username, '-') as discord_username,
         COALESCE(a.roblox_username, '-') as roblox_username,

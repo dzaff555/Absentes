@@ -54,7 +54,7 @@ export interface DashboardStats {
 export interface AuthSession {
   id: number;
   username: string;
-  email: string;
+  email?: string;
   role: UserRole;
   status: UserStatus;
   attendance_role?: AttendanceRole;

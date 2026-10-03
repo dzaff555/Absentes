@@ -36,7 +36,10 @@ export async function GET() {
   }
 
   const payload = {
-    ...session,
+    id: session.id,
+    username: session.username,
+    role: session.role,
+    status: session.status,
     attendance_role: user?.attendance_role || 'CSOT',
     profile_photo: user?.profile_photo || null,
     roblox_username: user?.roblox_username || null,

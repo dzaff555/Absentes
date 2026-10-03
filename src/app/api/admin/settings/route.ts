@@ -13,8 +13,8 @@ export async function GET() {
       );
     }
 
-    const users = await query<User[]>(
-      'SELECT id, username, email, role, status, created_at FROM users WHERE id = ?',
+    const users = await query<Pick<User, 'id' | 'username' | 'role' | 'status' | 'created_at'>[]>(
+      'SELECT id, username, role, status, created_at FROM users WHERE id = ?',
       [session.id]
     );
 
@@ -44,7 +44,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { username, email, currentPassword, newPassword, confirmNewPassword } = body;
+    const { username, currentPassword, newPassword, confirmNewPassword } = body;
 
     const users = await query<User[]>(
       'SELECT id, password FROM users WHERE id = ?',
@@ -95,7 +95,7 @@ export async function PUT(request: Request) {
       await query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, session.id]);
     }
 
-    // If updating username or email
+    // If updating the username
     const updates: string[] = [];
     const values: any[] = [];
 
@@ -113,22 +113,6 @@ export async function PUT(request: Request) {
       }
       updates.push('username = ?');
       values.push(username.trim());
-    }
-
-    if (email && email.trim() !== '') {
-      const cleanEmail = email.trim().toLowerCase();
-      const existingEmail = await query<User[]>(
-        'SELECT id FROM users WHERE email = ? AND id != ? LIMIT 1',
-        [cleanEmail, session.id]
-      );
-      if (existingEmail.length > 0) {
-        return NextResponse.json(
-          { success: false, error: 'Email sudah digunakan oleh user lain.' },
-          { status: 409 }
-        );
-      }
-      updates.push('email = ?');
-      values.push(cleanEmail);
     }
 
     if (updates.length > 0) {
