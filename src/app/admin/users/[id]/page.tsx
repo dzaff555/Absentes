@@ -27,7 +27,7 @@ interface StaffProfile {
   discord_username: string | null;
   profile_completed: number | boolean;
   created_at: string;
-  joined_date: string;
+  joined_at: string;
   attendance_count: number;
   weekend_attendance_count: number;
   warning_count: number;
@@ -60,7 +60,7 @@ export default async function AdminStaffProfilePage({
     `SELECT u.id, u.username, u.real_name, u.role, u.status, u.attendance_role, u.profile_photo,
       u.roblox_username, u.discord_username, u.profile_completed,
       DATE_FORMAT(u.created_at, '%Y-%m-%d %H:%i') AS created_at,
-      DATE_FORMAT(u.created_at, '%Y-%m-%d') AS joined_date,
+      DATE_FORMAT(u.created_at, '%Y-%m-%d %H:%i:%s') AS joined_at,
       (SELECT COUNT(*) FROM attendance a
        WHERE a.user_id = u.id AND a.status = 'Hadir') AS attendance_count,
       (SELECT COUNT(*) FROM attendance a
@@ -79,7 +79,7 @@ export default async function AdminStaffProfilePage({
   if (!staff) notFound();
   const missedAttendanceCount = Math.max(
     0,
-    countWeekendDaysSince(staff.joined_date, attendanceThroughDate) - Number(staff.weekend_attendance_count)
+    countWeekendDaysSince(staff.joined_at, attendanceThroughDate) - Number(staff.weekend_attendance_count)
   );
   const warnings = await query<StaffWarning[]>(
     `SELECT

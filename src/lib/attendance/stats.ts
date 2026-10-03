@@ -16,9 +16,16 @@ export function getLastCompletedAttendanceDate(date: Date = new Date()): string 
   return previousDate.toISOString().slice(0, 10);
 }
 
-export function countWeekendDaysSince(joinedDate: string, throughDate: string): number {
+export function countWeekendDaysSince(joinedAt: string, throughDate: string): number {
+  const joinedDate = joinedAt.slice(0, 10);
   const current = new Date(`${joinedDate}T00:00:00.000Z`);
   const lastDay = new Date(`${throughDate}T00:00:00.000Z`);
+  const joinedTime = joinedAt.slice(11, 19);
+
+  if (joinedTime >= '18:00:00') {
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
   let count = 0;
 
   while (current <= lastDay) {
