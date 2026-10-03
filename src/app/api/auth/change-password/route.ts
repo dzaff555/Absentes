@@ -95,10 +95,6 @@ export async function POST(request: Request) {
         );
       }
 
-      await connection.query(
-        'UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0',
-        [session.id]
-      );
       await connection.commit();
     } catch (error: unknown) {
       await connection.rollback();

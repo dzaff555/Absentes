@@ -23,11 +23,6 @@ export async function GET() {
       appName: process.env.NEXT_PUBLIC_APP_NAME || 'Daily Attendance',
       appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       database: getDbConnectionInfo(),
-      email: {
-        host: process.env.EMAIL_HOST || 'smtp.mailtrap.io',
-        port: process.env.EMAIL_PORT || '2525',
-        from: process.env.EMAIL_FROM || 'Daily Attendance <no-reply@dailyattendance.com>',
-      },
       timezone: 'Asia/Jakarta (WIB)',
     };
 

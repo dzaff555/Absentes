@@ -35,15 +35,6 @@ export interface Attendance {
   email?: string;
 }
 
-export interface PasswordResetToken {
-  id: number;
-  user_id: number;
-  token: string;
-  expires_at: string;
-  used: boolean;
-  created_at: string;
-}
-
 export interface DashboardStats {
   totalUsers: number;
   attendedToday: number;

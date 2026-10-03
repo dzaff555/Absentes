@@ -182,19 +182,6 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
     await ensureProfilePhotoCapacity(dbPool);
     await ensureEmailIsOptional(dbPool);
 
-    await dbPool.query(`
-      CREATE TABLE IF NOT EXISTS password_reset_tokens (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        token VARCHAR(255) NOT NULL UNIQUE,
-        expires_at DATETIME NOT NULL,
-        used BOOLEAN NOT NULL DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_reset_token_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        INDEX idx_token (token)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-    `);
-
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@dailyattendance.local';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';

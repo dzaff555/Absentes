@@ -246,7 +246,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/70 border border-blue-200/70 text-xs text-blue-900 leading-relaxed">
               <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
-                <strong>Pengaturan environment:</strong> Untuk deployment Vercel, atur kredensial MySQL, SMTP Nodemailer, dan JWT Secret di <code>Project Settings → Environment Variables</code>. Saat development lokal, atur variabel tersebut di file <code>.env</code>.
+                <strong>Pengaturan environment:</strong> Untuk deployment Vercel, atur kredensial MySQL dan JWT Secret di <code>Project Settings → Environment Variables</code>. Saat development lokal, atur variabel tersebut di file <code>.env</code>.
               </div>
             </div>
           </CardContent>

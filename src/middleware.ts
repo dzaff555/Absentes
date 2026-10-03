@@ -12,8 +12,7 @@ export function middleware(request: NextRequest) {
   const isAuthRoute =
     pathname === '/login' ||
     pathname === '/register' ||
-    pathname === '/forgot-password' ||
-    pathname.startsWith('/reset-password');
+    pathname === '/forgot-password';
 
   const isAdminRoute = pathname.startsWith('/admin');
   const isUserRoute =

@@ -45,15 +45,3 @@ CREATE TABLE IF NOT EXISTS attendance (
   INDEX idx_attendance_date (attendance_date),
   INDEX idx_attendance_user_date (user_id, attendance_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Table: password_reset_tokens
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  token VARCHAR(255) NOT NULL UNIQUE,
-  expires_at DATETIME NOT NULL,
-  used BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_reset_token_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_token (token)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
