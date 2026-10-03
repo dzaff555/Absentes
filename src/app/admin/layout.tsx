@@ -1,6 +1,12 @@
 import { redirect } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { getSessionUser } from '@/lib/auth/auth';
+import { query } from '@/lib/database/db';
+import { AuthSession } from '@/types';
+
+interface AdminLayoutUser extends AuthSession {
+  profile_photo: string | null;
+}
 
 export default async function AdminLayout({
   children,
@@ -10,8 +16,19 @@ export default async function AdminLayout({
   const session = await getSessionUser();
   if (!session || session.role !== 'ADMIN') redirect('/login');
 
+  const users = await query<AdminLayoutUser[]>(
+    `SELECT id, username, email, role, status, attendance_role,
+      profile_photo, roblox_username, discord_username, profile_completed
+     FROM users
+     WHERE id = ? AND role = 'ADMIN' AND status = 'ACTIVE'
+     LIMIT 1`,
+    [session.id]
+  );
+  const admin = users[0];
+  if (!admin) redirect('/login');
+
   return (
-    <AppLayout user={session}>
+    <AppLayout user={admin}>
       {children}
     </AppLayout>
   );
