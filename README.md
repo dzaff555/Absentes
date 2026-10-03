@@ -14,7 +14,7 @@ Vercel uses `npm run build` by default. In the Vercel project, open
 
 | Variable | Value |
 | --- | --- |
-| `DATABASE_URL` | The Railway MySQL public connection URL, with the current rotated password |
+| `DATABASE_URL` | The Railway MySQL public connection URL, using the public host/port and ending in `/daily_attendance` |
 | `NEXT_PUBLIC_APP_URL` | The deployed website URL, such as `https://your-app.vercel.app` |
 | `JWT_SECRET` | A long, random secret unique to this deployment |
 | `JWT_EXPIRES_IN` | `7d` |
@@ -28,11 +28,13 @@ then redeploy. Keep `DATABASE_URL`, `JWT_SECRET`, and passwords server-side; nev
 prefix them with `NEXT_PUBLIC_`. `NEXT_PUBLIC_APP_URL` is the website URL, not the
 MySQL URL.
 
-Use the Railway database's public host and port when connecting from Vercel. The
-database URL must name a database the Railway MySQL user can access. On first
-initialization, the application creates its database and tables, so the MySQL account
-must have permission to create databases. Set `NEXT_PUBLIC_APP_URL` to the production
-Vercel domain so password-reset email links point to the live app.
+Set `DATABASE_URL` to the Railway MySQL public endpoint, with the database name
+`daily_attendance` as the final URL path. Use the actual Railway connection values
+and a newly rotated password; never commit this URL to Git. The app uses the database
+name in the URL. On first initialization, it creates the database and tables if
+needed, so the MySQL account must have permission to create databases.
+Set `NEXT_PUBLIC_APP_URL` to the production Vercel domain so password-reset email
+links point to the live app.
 
 The Railway `absentes` app service is not needed when Vercel runs the full Next.js
 application. Keep the Railway MySQL service running. Do not remove the app service
