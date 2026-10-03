@@ -66,6 +66,10 @@ function getDateRange(filters: AttendanceReportFilters, defaultToday: boolean) {
   return resolveAttendanceDateRange(requestedStart, requestedEnd);
 }
 
+const digitRows = Array.from({ length: 10 }, (_, digit) => `SELECT ${digit} AS digit`).join(
+  ' UNION ALL '
+);
+
 function buildAttendanceReportQuery(filters: AttendanceReportFilters): AttendanceReportQuery {
   const status = filters.status?.trim() || 'ALL';
   const attendanceRole = filters.attendanceRole?.trim() || 'ALL';
@@ -74,7 +78,7 @@ function buildAttendanceReportQuery(filters: AttendanceReportFilters): Attendanc
   const dateRange = getDateRange(filters, isAbsent);
   const whereConditions: string[] = [];
   const params: unknown[] = [];
-  let withSql = '';
+  const withSql = '';
   let fromSql: string;
   let empty = false;
 
@@ -105,16 +109,19 @@ function buildAttendanceReportQuery(filters: AttendanceReportFilters): Attendanc
       throw new RangeError('Rentang laporan Belum Absen maksimal 900 hari.');
     }
 
-    withSql = `WITH RECURSIVE report_dates (report_date) AS (
-      SELECT CAST(? AS DATE)
-      UNION ALL
-      SELECT DATE_ADD(report_date, INTERVAL 1 DAY)
-      FROM report_dates
-      WHERE report_date < CAST(? AS DATE)
-    )`;
-    params.push(startDate, effectiveEndDate);
+    params.push(startDate, effectiveEndDate, startDate);
     fromSql = `
-      FROM report_dates d
+      FROM (
+        SELECT DATE_ADD(
+          CAST(? AS DATE),
+          INTERVAL (ones.digit + tens.digit * 10 + hundreds.digit * 100) DAY
+        ) AS report_date
+        FROM (${digitRows}) ones
+        CROSS JOIN (${digitRows}) tens
+        CROSS JOIN (${digitRows}) hundreds
+        WHERE ones.digit + tens.digit * 10 + hundreds.digit * 100
+          <= DATEDIFF(CAST(? AS DATE), CAST(? AS DATE))
+      ) d
       JOIN users u ON u.role = 'USER' AND u.status = 'ACTIVE'
       LEFT JOIN attendance a ON a.user_id = u.id AND a.attendance_date = d.report_date
     `;
