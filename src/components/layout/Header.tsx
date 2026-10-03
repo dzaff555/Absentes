@@ -13,13 +13,24 @@ import {
   Clock,
   Calendar,
   CheckCircle2,
+  AlertTriangle,
+  MailOpen,
   Moon,
   Sun,
 } from 'lucide-react';
 import { AuthSession } from '@/types';
-import { formatIndonesianDate, getJakartaTimeString } from '@/lib/utils/date';
+import { formatIndonesianDate, formatIndonesianDateTime, getJakartaTimeString } from '@/lib/utils/date';
 import { useToast } from '../ui/Toast';
 import { useTheme } from '@/components/theme/ThemeProvider';
+
+interface InboxWarning {
+  id: number;
+  reason: string;
+  warning_date: string;
+  warning_time: string;
+  read_at: string | null;
+  issued_by_username: string | null;
+}
 
 export interface HeaderProps {
   user: AuthSession | null;
@@ -34,6 +45,11 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
+  const [inboxWarnings, setInboxWarnings] = useState<InboxWarning[]>([]);
+  const [unreadWarningCount, setUnreadWarningCount] = useState(0);
+  const [isInboxLoading, setIsInboxLoading] = useState(false);
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
+  const [inboxError, setInboxError] = useState('');
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -41,6 +57,110 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
   const pathname = usePathname();
   const toast = useToast();
   const { toggleTheme } = useTheme();
+  const isStaff = user?.role === 'USER';
+
+  const loadInbox = async () => {
+    setIsInboxLoading(true);
+    setInboxError('');
+    try {
+      const response = await fetch('/api/inbox');
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Gagal memuat inbox.');
+      }
+
+      setInboxWarnings(result.data.warnings as InboxWarning[]);
+      setUnreadWarningCount(Number(result.data.unreadCount || 0));
+    } catch (error: unknown) {
+      setInboxError(error instanceof Error ? error.message : 'Gagal memuat inbox.');
+    } finally {
+      setIsInboxLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isStaff) return;
+
+    let isActive = true;
+    fetch('/api/inbox')
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Gagal memuat inbox.');
+        }
+        if (isActive) {
+          setInboxWarnings(result.data.warnings as InboxWarning[]);
+          setUnreadWarningCount(Number(result.data.unreadCount || 0));
+        }
+      })
+      .catch((error: unknown) => {
+        if (isActive) {
+          setInboxError(error instanceof Error ? error.message : 'Gagal memuat inbox.');
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isStaff, user?.id]);
+
+  const toggleInbox = () => {
+    const shouldOpen = !notificationsOpen;
+    setNotificationsOpen(shouldOpen);
+    if (shouldOpen && isStaff) void loadInbox();
+  };
+
+  const markWarningRead = async (warningId: number) => {
+    const warning = inboxWarnings.find((item) => item.id === warningId);
+    if (!warning || warning.read_at || isMarkingRead) return;
+
+    setIsMarkingRead(true);
+    try {
+      const response = await fetch('/api/inbox', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: warningId }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Gagal memperbarui status pesan.');
+      }
+
+      setInboxWarnings((current) =>
+        current.map((item) => item.id === warningId ? { ...item, read_at: new Date().toISOString() } : item)
+      );
+      setUnreadWarningCount((count) => Math.max(0, count - 1));
+    } catch (error: unknown) {
+      toast.error('Pesan gagal diperbarui', error instanceof Error ? error.message : 'Silakan coba lagi.');
+    } finally {
+      setIsMarkingRead(false);
+    }
+  };
+
+  const markAllWarningsRead = async () => {
+    if (unreadWarningCount === 0 || isMarkingRead) return;
+
+    setIsMarkingRead(true);
+    try {
+      const response = await fetch('/api/inbox', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Gagal memperbarui status pesan.');
+      }
+
+      const readAt = new Date().toISOString();
+      setInboxWarnings((current) => current.map((item) => ({ ...item, read_at: item.read_at || readAt })));
+      setUnreadWarningCount(0);
+    } catch (error: unknown) {
+      toast.error('Pesan gagal diperbarui', error instanceof Error ? error.message : 'Silakan coba lagi.');
+    } finally {
+      setIsMarkingRead(false);
+    }
+  };
 
   // Update clock every second (WIB)
   useEffect(() => {
@@ -145,36 +265,100 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
         {/* Notifications Popover */}
         <div className="relative" ref={notifRef}>
           <button
-            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            onClick={toggleInbox}
             className="relative p-2.5 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-            aria-label="Lihat notifikasi"
+            aria-label={isStaff ? `Buka inbox, ${unreadWarningCount} pesan belum dibaca` : 'Lihat notifikasi'}
+            aria-expanded={notificationsOpen}
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white" />
+            {isStaff && unreadWarningCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white ring-2 ring-white">
+                {unreadWarningCount > 9 ? '9+' : unreadWarningCount}
+              </span>
+            )}
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 py-3 z-50 animate-scale-in">
-              <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-800">Notifikasi</span>
-                <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                  Terbaru
-                </span>
+            <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white py-3 shadow-xl animate-scale-in">
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
+                <span className="text-sm font-bold text-slate-800">{isStaff ? 'Inbox Peringatan' : 'Notifikasi'}</span>
+                {isStaff && unreadWarningCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void markAllWarningsRead()}
+                    disabled={isMarkingRead}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  >
+                    Tandai semua dibaca
+                  </button>
+                )}
               </div>
-              <div className="p-2 space-y-1">
-                <div className="p-3 rounded-xl hover:bg-slate-50 transition-colors flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-4 h-4" />
+              <div className="max-h-[min(65vh,28rem)] overflow-y-auto p-2">
+                {isStaff ? (
+                  isInboxLoading ? (
+                    <p className="p-4 text-center text-xs text-slate-500">Memuat pesan...</p>
+                  ) : inboxError ? (
+                    <div className="p-4 text-center">
+                      <p className="text-xs text-rose-600">{inboxError}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadInbox()}
+                        className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        Coba lagi
+                      </button>
+                    </div>
+                  ) : inboxWarnings.length === 0 ? (
+                    <div className="p-5 text-center">
+                      <MailOpen className="mx-auto h-6 w-6 text-slate-300" />
+                      <p className="mt-2 text-xs text-slate-500">Inbox belum memiliki pesan peringatan.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {inboxWarnings.map((warning) => (
+                        <button
+                          key={warning.id}
+                          type="button"
+                          onClick={() => void markWarningRead(warning.id)}
+                          disabled={isMarkingRead}
+                          className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-amber-50 disabled:cursor-default ${
+                            warning.read_at ? 'bg-white' : 'bg-amber-50/70'
+                          }`}
+                        >
+                          <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                            warning.read_at ? 'bg-slate-100 text-slate-500' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            <AlertTriangle className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-slate-800">Peringatan dari admin</span>
+                              {!warning.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-blue-600" />}
+                            </span>
+                            <span className="mt-1 block whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600">
+                              {warning.reason}
+                            </span>
+                            <span className="mt-1.5 block text-[10px] text-slate-400">
+                              Oleh {warning.issued_by_username || 'Admin'} · {formatIndonesianDateTime(warning.warning_date, warning.warning_time)}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  <div className="flex items-start gap-3 p-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-800">Sistem Absensi Aktif</p>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                        Waktu absensi hari ini menggunakan zona waktu Asia/Jakarta (WIB).
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800">
-                      Sistem Absensi Aktif
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                      Waktu absensi hari ini telah dibuka di zona waktu Asia/Jakarta (WIB).
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}

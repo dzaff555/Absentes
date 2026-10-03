@@ -45,7 +45,7 @@ function getDatabaseConfigurationError(): string | null {
 
 async function ensureColumns(
   dbPool: mysql.Pool,
-  migrations: { table: 'users' | 'attendance'; column: string; definition: string }[]
+  migrations: { table: 'users' | 'attendance' | 'staff_warnings'; column: string; definition: string }[]
 ) {
   for (const migration of migrations) {
     const [columns] = await dbPool.query<mysql.RowDataPacket[]>(
@@ -168,6 +168,7 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
         user_id INT NOT NULL,
         issued_by INT NULL,
         reason VARCHAR(1000) NOT NULL,
+        read_at TIMESTAMP NULL DEFAULT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_staff_warning_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
@@ -182,6 +183,7 @@ export async function initDatabase(): Promise<{ success: boolean; message: strin
       { table: 'users', column: 'discord_username', definition: 'VARCHAR(100) NULL' },
       { table: 'users', column: 'profile_completed', definition: 'BOOLEAN NOT NULL DEFAULT FALSE' },
       { table: 'attendance', column: 'attendance_role', definition: "ENUM('CSOT', 'PPKA', 'MASINIS', 'PKD', 'PJL') NOT NULL DEFAULT 'CSOT'" },
+      { table: 'staff_warnings', column: 'read_at', definition: 'TIMESTAMP NULL DEFAULT NULL AFTER reason' },
     ]);
     await ensureProfilePhotoCapacity(dbPool);
     await ensureEmailIsOptional(dbPool);

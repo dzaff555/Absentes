@@ -153,10 +153,15 @@ async function ensureStaffWarningsTable(db) {
       user_id INT NOT NULL,
       issued_by INT NULL,
       reason VARCHAR(1000) NOT NULL,
+      read_at TIMESTAMP NULL DEFAULT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT fk_staff_warning_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
       INDEX idx_staff_warnings_user_created (user_id, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  const [readAtColumn] = await db.query("SHOW COLUMNS FROM staff_warnings LIKE 'read_at'");
+  if (readAtColumn.length === 0) {
+    await db.query('ALTER TABLE staff_warnings ADD COLUMN read_at TIMESTAMP NULL DEFAULT NULL AFTER reason');
+  }
 }

@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS staff_warnings (
   user_id INT NOT NULL,
   issued_by INT NULL,
   reason VARCHAR(1000) NOT NULL,
+  read_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_staff_warning_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_staff_warning_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL,
