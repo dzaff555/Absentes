@@ -52,6 +52,9 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
+    if (session.role === 'ADMIN' && pathname.startsWith('/profile')) {
+      return NextResponse.redirect(new URL('/admin/profile', request.url));
+    }
     if (
       session.role === 'ADMIN' &&
       (pathname.startsWith('/dashboard') ||

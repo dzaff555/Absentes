@@ -244,7 +244,7 @@ export function Sidebar({
       <div className="p-3 border-t border-white/10 bg-black/10 shrink-0">
         {user && (
           <Link
-            href="/profile"
+            href={isAdmin ? '/admin/profile' : '/profile'}
             onClick={() => setMobileOpen(false)}
             title={collapsed ? `${user.username} profile` : 'View account profile'}
             className={`mb-2 flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-white/8 ${collapsed ? 'justify-center px-0' : ''}`}

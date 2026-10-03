@@ -80,6 +80,7 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
 
   // Compute breadcrumb title
   const getPageTitle = () => {
+    if (pathname.startsWith('/admin/profile')) return 'Profil / Biodata';
     if (pathname.startsWith('/admin/attendance-statistics')) return 'Attendance Statistics';
     if (pathname.startsWith('/admin/reports')) return 'Laporan Absensi';
     if (pathname.startsWith('/admin/users')) return 'Manajemen User';
@@ -228,7 +229,7 @@ export function Header({ user, onMenuClick, collapsed, showMenuButton = true, sh
 
               {user && (
                 <Link
-                  href="/profile"
+                  href={user.role === 'ADMIN' ? '/admin/profile' : '/profile'}
                   onClick={() => setProfileDropdownOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                 >
