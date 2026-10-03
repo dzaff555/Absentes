@@ -150,73 +150,81 @@ export default async function AdminStaffProfilePage({
               </div>
               <p className="mt-2 text-sm font-bold text-slate-800">{staff.created_at}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <CalendarDays className="h-4 w-4" /> Absensi Terakhir
-              </div>
-              <p className="mt-2 text-sm font-bold text-slate-800">
-                {staff.last_attendance
-                  ? `${formatIndonesianDate(staff.last_attendance)} · ${staff.last_attendance_status || 'Tercatat'}`
-                  : 'Belum pernah absen'}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Total Hadir
-              </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.attendance_count)}</p>
-              <p className="mt-1 text-xs text-slate-500">kali tercatat hadir</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <XCircle className="h-4 w-4 text-rose-600" /> Tidak Hadir
-              </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-800">{missedAttendanceCount}</p>
-              <p className="mt-1 text-xs text-slate-500">hari Jumat–Minggu tanpa catatan hadir</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                <AlertTriangle className="h-4 w-4 text-amber-600" /> Peringatan
-              </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.warning_count)}</p>
-              <p className="mt-1 text-xs text-slate-500">kali diperingatkan oleh admin</p>
-            </div>
+            {staff.role === 'USER' && (
+              <>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <CalendarDays className="h-4 w-4" /> Absensi Terakhir
+                  </div>
+                  <p className="mt-2 text-sm font-bold text-slate-800">
+                    {staff.last_attendance
+                      ? `${formatIndonesianDate(staff.last_attendance)} · ${staff.last_attendance_status || 'Tercatat'}`
+                      : 'Belum pernah absen'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Total Hadir
+                  </div>
+                  <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.attendance_count)}</p>
+                  <p className="mt-1 text-xs text-slate-500">kali tercatat hadir</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <XCircle className="h-4 w-4 text-rose-600" /> Tidak Hadir
+                  </div>
+                  <p className="mt-2 text-2xl font-extrabold text-slate-800">{missedAttendanceCount}</p>
+                  <p className="mt-1 text-xs text-slate-500">hari Jumat–Minggu tanpa catatan hadir</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" /> Peringatan
+                  </div>
+                  <p className="mt-2 text-2xl font-extrabold text-slate-800">{Number(staff.warning_count)}</p>
+                  <p className="mt-1 text-xs text-slate-500">kali diperingatkan oleh admin</p>
+                </div>
+              </>
+            )}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-lg font-extrabold text-slate-900">Beri Peringatan</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Setiap peringatan akan tersimpan di riwayat profil dan menambah total peringatan.
-          </p>
-          {staff.status !== 'ACTIVE' ? (
-            <p className="mt-4 text-sm text-slate-500">Akun nonaktif tidak dapat diberi peringatan.</p>
-          ) : session.id === staff.id ? (
-            <p className="mt-4 text-sm text-slate-500">Anda tidak dapat memberi peringatan pada akun sendiri.</p>
-          ) : (
-            <div className="mt-4">
-              <IssueWarningForm userId={staff.id} />
-            </div>
-          )}
-        </section>
+        {staff.role === 'USER' && (
+          <>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-lg font-extrabold text-slate-900">Beri Peringatan</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Setiap peringatan akan tersimpan di riwayat profil dan menambah total peringatan.
+              </p>
+              {staff.status !== 'ACTIVE' ? (
+                <p className="mt-4 text-sm text-slate-500">Akun nonaktif tidak dapat diberi peringatan.</p>
+              ) : session.id === staff.id ? (
+                <p className="mt-4 text-sm text-slate-500">Anda tidak dapat memberi peringatan pada akun sendiri.</p>
+              ) : (
+                <div className="mt-4">
+                  <IssueWarningForm userId={staff.id} />
+                </div>
+              )}
+            </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-lg font-extrabold text-slate-900">Riwayat Peringatan</h2>
-          {warnings.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">Belum ada peringatan.</p>
-          ) : (
-            <ul className="mt-4 divide-y divide-slate-100">
-              {warnings.map((warning, index) => (
-                <li key={`${warning.warning_date}-${warning.warning_time}-${index}`} className="py-3 first:pt-0 last:pb-0">
-                  <p className="text-sm font-medium text-slate-800">{warning.reason}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {formatIndonesianDateTime(warning.warning_date, warning.warning_time)} · Oleh {warning.issued_by_username || 'Admin'}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-lg font-extrabold text-slate-900">Riwayat Peringatan</h2>
+              {warnings.length === 0 ? (
+                <p className="mt-3 text-sm text-slate-500">Belum ada peringatan.</p>
+              ) : (
+                <ul className="mt-4 divide-y divide-slate-100">
+                  {warnings.map((warning, index) => (
+                    <li key={`${warning.warning_date}-${warning.warning_time}-${index}`} className="py-3 first:pt-0 last:pb-0">
+                      <p className="text-sm font-medium text-slate-800">{warning.reason}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatIndonesianDateTime(warning.warning_date, warning.warning_time)} · Oleh {warning.issued_by_username || 'Admin'}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
 
       </div>
     </>
