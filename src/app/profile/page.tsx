@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserCircle2, ShieldCheck } from 'lucide-react';
+import { KeyRound, UserCircle2, ShieldCheck } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfileForm, ProfileFormValues } from '@/components/profile/ProfileForm';
 import { AuthSession } from '@/types';
 import { useToast } from '@/components/ui/Toast';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { Button } from '@/components/ui/Button';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -14,6 +16,10 @@ export default function ProfilePage() {
   const [user, setUser] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
@@ -61,6 +67,35 @@ export default function ProfilePage() {
       toast.error('Gagal', message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleChangePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsChangingPassword(true);
+
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword, confirmNewPassword }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        toast.error('Gagal Mengubah Password', data.error || 'Tidak dapat mengubah password.');
+        return;
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      toast.success('Password Berhasil Diubah', 'Gunakan password baru saat login berikutnya.');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengubah password.';
+      toast.error('Gagal Mengubah Password', message);
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -116,6 +151,51 @@ export default function ProfilePage() {
             photoOnly={user?.role === 'ADMIN'}
           />
         </div>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <div className="mb-6">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              <KeyRound className="h-5 w-5 text-blue-600" />
+              Ganti Password
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Masukkan password saat ini, lalu password baru dan konfirmasinya.
+            </p>
+          </div>
+
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <PasswordInput
+              label="Password Saat Ini"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <PasswordInput
+                label="Password Baru"
+                autoComplete="new-password"
+                minLength={8}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+              />
+              <PasswordInput
+                label="Konfirmasi Password Baru"
+                autoComplete="new-password"
+                minLength={8}
+                value={confirmNewPassword}
+                onChange={(event) => setConfirmNewPassword(event.target.value)}
+                required
+              />
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button type="submit" isLoading={isChangingPassword} loadingText="Menyimpan...">
+                Simpan Password Baru
+              </Button>
+            </div>
+          </form>
+        </section>
       </div>
     </AppLayout>
   );
