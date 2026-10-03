@@ -16,7 +16,7 @@ export function AttendanceBarChart({ data }: AttendanceBarChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-xs text-slate-400">
-        Belum ada data visualisasi 7 hari terakhir.
+        Belum ada data visualisasi Jumat–Minggu.
       </div>
     );
   }

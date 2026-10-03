@@ -109,3 +109,40 @@ export function getLastNDays(daysCount: number = 7): { date: string; day: string
 
   return result;
 }
+
+/**
+ * Returns the Friday through Sunday attendance window for the current week in Asia/Jakarta.
+ */
+export function getLatestAttendanceDays(
+  date: Date = new Date()
+): { date: string; day: string }[] {
+  const today = getJakartaDateString(date);
+  const weekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: JAKARTA_TZ,
+    weekday: 'short',
+  }).format(date);
+  const daysSinceFriday: Record<string, number> = {
+    Fri: 0,
+    Sat: 1,
+    Sun: 2,
+    Mon: 3,
+    Tue: 4,
+    Wed: 5,
+    Thu: 6,
+  };
+  const daysBackToFriday = daysSinceFriday[weekday];
+
+  if (daysBackToFriday === undefined) {
+    throw new RangeError('Unable to resolve the current Jakarta weekday.');
+  }
+
+  const friday = new Date(`${today}T00:00:00.000Z`);
+  friday.setUTCDate(friday.getUTCDate() - daysBackToFriday);
+
+  return [0, 1, 2].map((daysAfterFriday) => {
+    const dayDate = new Date(friday);
+    dayDate.setUTCDate(dayDate.getUTCDate() + daysAfterFriday);
+    const dateString = dayDate.toISOString().slice(0, 10);
+    return { date: dateString, day: getIndonesianDayName(dateString) };
+  });
+}

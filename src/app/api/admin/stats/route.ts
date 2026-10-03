@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
-import { getJakartaDateString, getLastNDays } from '@/lib/utils/date';
+import { getJakartaDateString, getLatestAttendanceDays } from '@/lib/utils/date';
 import { DashboardStats } from '@/types';
 
 export async function GET() {
@@ -35,10 +35,10 @@ export async function GET() {
     // 4. Attendance Rate
     const attendanceRate = totalUsers > 0 ? parseFloat(((attendedToday / totalUsers) * 100).toFixed(1)) : 0;
 
-    // 5. Recent 7 days trend
-    const last7Days = getLastNDays(7);
+    // 5. Friday through Sunday attendance window for the current week
+    const attendanceDays = getLatestAttendanceDays();
     const recentDaysTrend = await Promise.all(
-      last7Days.map(async (d) => {
+      attendanceDays.map(async (d) => {
         const countRes = await query<{ count: number }[]>(
           'SELECT COUNT(DISTINCT user_id) as count FROM attendance WHERE attendance_date = ?',
           [d.date]

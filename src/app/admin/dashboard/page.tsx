@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
           <Card className="lg:col-span-2 overflow-hidden">
             <CardHeader>
               <div>
-                <CardTitle>Tren Kehadiran 7 Hari Terakhir</CardTitle>
+                <CardTitle>Tren Kehadiran Jumat–Minggu</CardTitle>
                 <CardDescription>
                   Grafik total karyawan yang hadir per hari kerja (Asia/Jakarta)
                 </CardDescription>
