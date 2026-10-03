@@ -12,7 +12,6 @@ import {
 import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
 import { IssueWarningForm } from '@/components/profile/IssueWarningForm';
-import { EditUsernameButton } from '@/components/profile/EditUsernameButton';
 import { countWeekendDaysSince, getLastCompletedAttendanceDate } from '@/lib/attendance/stats';
 import { formatIndonesianDate, formatIndonesianDateTime } from '@/lib/utils/date';
 
@@ -124,10 +123,7 @@ export default async function AdminStaffProfilePage({
             )}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-blue-200">Profil Staff</p>
-              <div className="mt-1 flex items-center gap-1.5">
-                <h1 className="break-all text-2xl font-extrabold">{staff.username}</h1>
-                <EditUsernameButton userId={staff.id} username={staff.username} />
-              </div>
+              <h1 className="mt-1 text-2xl font-extrabold">{staff.username}</h1>
               <p className="mt-1 text-sm text-blue-100">{staff.attendance_role || 'Role belum ditentukan'}</p>
             </div>
             <span className={`sm:ml-auto rounded-full px-3 py-1 text-xs font-bold ${staff.status === 'ACTIVE' ? 'bg-emerald-400/20 text-emerald-100' : 'bg-rose-400/20 text-rose-100'}`}>
