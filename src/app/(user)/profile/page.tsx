@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound, UserCircle2, ShieldCheck } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { ProfileForm, ProfileFormValues } from '@/components/profile/ProfileForm';
 import { AuthSession } from '@/types';
 import { useToast } from '@/components/ui/Toast';
@@ -101,19 +100,19 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <AppLayout user={user}>
+      <>
         <div className="flex min-h-[60vh] items-center justify-center">
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
             <p className="mt-4 text-sm text-slate-500">Memuat profil Anda...</p>
           </div>
         </div>
-      </AppLayout>
+      </>
     );
   }
 
   return (
-    <AppLayout user={user}>
+    <>
       <div className="mx-auto max-w-4xl space-y-6 py-2">
         <div className="rounded-3xl bg-gradient-to-r from-slate-800 via-slate-900 to-blue-900 p-6 text-white shadow-xl shadow-slate-900/10">
           <div className="flex items-center gap-3">
@@ -197,6 +196,6 @@ export default function ProfilePage() {
           </form>
         </section>
       </div>
-    </AppLayout>
+    </>
   );
 }

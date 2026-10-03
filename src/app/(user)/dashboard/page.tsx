@@ -3,17 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  CalendarCheck,
   Clock,
   UserCheck,
   AlertCircle,
   CheckCircle2,
   Calendar,
-  History,
   ArrowRight,
   ShieldAlert,
 } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
@@ -93,7 +90,7 @@ export default function UserDashboardPage() {
   }, [fetchDashboardData]);
 
   return (
-    <AppLayout user={user}>
+    <>
       <div className="space-y-6 sm:space-y-8">
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0F2747] via-[#16365F] to-[#2563EB] p-6 sm:p-8 md:p-10 text-white shadow-xl shadow-blue-900/10">
@@ -395,6 +392,6 @@ export default function UserDashboardPage() {
           </Card>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

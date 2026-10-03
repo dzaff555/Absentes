@@ -14,7 +14,6 @@ import {
   Info,
   XCircle,
 } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -193,7 +192,7 @@ export default function AttendancePage() {
   };
 
   return (
-    <AppLayout user={user}>
+    <>
       <div className={`max-w-2xl mx-auto py-4 sm:py-8 space-y-6 ${!isLoading && !alreadyAttended && !submittedData ? 'hidden' : ''}`}>
         {/* Navigation back */}
         <Link
@@ -558,6 +557,6 @@ export default function AttendancePage() {
           </div>
         </div>
       </Modal>
-    </AppLayout>
+    </>
   );
 }

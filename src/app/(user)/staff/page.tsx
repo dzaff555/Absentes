@@ -1,8 +1,5 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Users } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
 
 interface StaffCard {
@@ -17,9 +14,6 @@ export default async function StaffDirectoryPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const session = await getSessionUser();
-  if (!session) redirect('/login');
-
   const { page: pageParam } = await searchParams;
   const requestedPage = Number.parseInt(pageParam || '1', 10);
   const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
@@ -39,7 +33,7 @@ export default async function StaffDirectoryPage({
   const totalPages = Math.max(1, Math.ceil(totalStaff / pageSize));
 
   return (
-    <AppLayout user={session}>
+    <>
       <div className="space-y-6">
         <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-600">
           <ArrowLeft className="h-4 w-4" />
@@ -106,6 +100,6 @@ export default async function StaffDirectoryPage({
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

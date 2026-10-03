@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { ArrowLeft, CalendarDays, UserRound } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
 import { formatIndonesianDate } from '@/lib/utils/date';
 
@@ -22,9 +20,6 @@ export default async function StaffProfilePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await getSessionUser();
-  if (!session) redirect('/login');
-
   const { id } = await params;
   const staffId = Number.parseInt(id, 10);
   if (!Number.isInteger(staffId)) notFound();
@@ -43,7 +38,7 @@ export default async function StaffProfilePage({
   if (!staff) notFound();
 
   return (
-    <AppLayout user={session}>
+    <>
       <div className="mx-auto max-w-3xl space-y-6">
         <Link href="/staff" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-600">
           <ArrowLeft className="h-4 w-4" />
@@ -96,6 +91,6 @@ export default async function StaffProfilePage({
           </div>
         </section>
       </div>
-    </AppLayout>
+    </>
   );
 }
