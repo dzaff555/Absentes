@@ -2,16 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Settings,
   Shield,
   KeyRound,
-  Database,
-  Mail,
-  Server,
   Save,
-  CheckCircle2,
-  Info,
-  Clock,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -24,7 +17,6 @@ import { AuthSession } from '@/types';
 export default function AdminSettingsPage() {
   const toast = useToast();
   const [currentUser, setCurrentUser] = useState<AuthSession | null>(null);
-  const [systemConfig, setSystemConfig] = useState<any>(null);
 
   // Profile edit states
   const [username, setUsername] = useState('');
@@ -52,7 +44,6 @@ export default function AdminSettingsPage() {
       const res = await fetch('/api/admin/settings');
       const data = await res.json();
       if (data.success) {
-        setSystemConfig(data.data.config);
         if (data.data.user) {
           setUsername(data.data.user.username || '');
           setEmail(data.data.user.email || '');
@@ -111,7 +102,7 @@ export default function AdminSettingsPage() {
             Pengaturan Sistem & Akun Admin
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Konfigurasi akun administrator dan ringkasan variabel lingkungan sistem.
+            Kelola informasi akun dan password administrator.
           </p>
         </div>
 
@@ -197,60 +188,6 @@ export default function AdminSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* System & Environment Configuration Overview */}
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>Ringkasan Lingkungan (.env)</CardTitle>
-              <CardDescription>
-                Parameter konfigurasi aplikasi yang aktif saat ini.
-              </CardDescription>
-            </div>
-            <Server className="w-5 h-5 text-indigo-600" />
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
-                <div className="flex items-center gap-2 text-slate-700 font-bold">
-                  <Database className="w-4 h-4 text-blue-600" /> Database MySQL
-                </div>
-                <div className="text-slate-500">
-                  Host: <span className="font-mono text-slate-800 font-semibold">{systemConfig?.database?.host}:{systemConfig?.database?.port}</span>
-                </div>
-                <div className="text-slate-500">
-                  Database: <span className="font-mono text-slate-800 font-semibold">{systemConfig?.database?.name}</span>
-                </div>
-                <div className="text-slate-500">
-                  User: <span className="font-mono text-slate-800 font-semibold">{systemConfig?.database?.user}</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
-                <div className="flex items-center gap-2 text-slate-700 font-bold">
-                  <Clock className="w-4 h-4 text-emerald-600" /> Zona Waktu & Aplikasi
-                </div>
-                <div className="text-slate-500">
-                  Timezone: <span className="font-bold text-slate-800">{systemConfig?.timezone}</span>
-                </div>
-                <div className="text-slate-500">
-                  Nama Aplikasi: <span className="font-bold text-slate-800">{systemConfig?.appName}</span>
-                </div>
-                <div className="text-slate-500">
-                  URL: <span className="font-mono text-slate-800 font-semibold">{systemConfig?.appUrl}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Explanatory note */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/70 border border-blue-200/70 text-xs text-blue-900 leading-relaxed">
-              <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <strong>Pengaturan environment:</strong> Untuk deployment Vercel, atur kredensial MySQL dan JWT Secret di <code>Project Settings → Environment Variables</code>. Saat development lokal, atur variabel tersebut di file <code>.env</code>.
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </AppLayout>
   );

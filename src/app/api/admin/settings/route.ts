@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser, comparePassword, hashPassword } from '@/lib/auth/auth';
-import { getDbConnectionInfo, query } from '@/lib/database/db';
+import { query } from '@/lib/database/db';
 import { User } from '@/types';
 
 export async function GET() {
@@ -13,24 +13,15 @@ export async function GET() {
       );
     }
 
-    // Return system environment metadata and admin profile
     const users = await query<User[]>(
       'SELECT id, username, email, role, status, created_at FROM users WHERE id = ?',
       [session.id]
     );
 
-    const config = {
-      appName: process.env.NEXT_PUBLIC_APP_NAME || 'Daily Attendance',
-      appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      database: getDbConnectionInfo(),
-      timezone: 'Asia/Jakarta (WIB)',
-    };
-
     return NextResponse.json({
       success: true,
       data: {
         user: users[0] || null,
-        config,
       },
     });
   } catch (error: any) {
