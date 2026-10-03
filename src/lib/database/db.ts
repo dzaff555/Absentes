@@ -28,6 +28,15 @@ const DB_NAME = DB_CONFIG.database || process.env.DB_NAME || 'daily_attendance';
 let pool: mysql.Pool | null = null;
 let isInitialized = false;
 
+export function getDbConnectionInfo() {
+  return {
+    host: DB_CONFIG.host || 'localhost',
+    port: String(DB_CONFIG.port || 3306),
+    name: DB_NAME,
+    user: DB_CONFIG.user || 'root',
+  };
+}
+
 async function ensureColumns(
   dbPool: mysql.Pool,
   migrations: { table: 'users' | 'attendance'; column: string; definition: string }[]

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Koneksi database MySQL gagal. Periksa nilai DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, dan DB_NAME di file .env.',
+          error: 'Koneksi database MySQL gagal. Periksa DATABASE_URL atau variabel DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, dan DB_NAME pada environment aplikasi.',
         },
         { status: 503 }
       );

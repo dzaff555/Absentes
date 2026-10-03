@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser, comparePassword, hashPassword } from '@/lib/auth/auth';
-import { query } from '@/lib/database/db';
+import { getDbConnectionInfo, query } from '@/lib/database/db';
 import { User } from '@/types';
 
 export async function GET() {
@@ -22,12 +22,7 @@ export async function GET() {
     const config = {
       appName: process.env.NEXT_PUBLIC_APP_NAME || 'Daily Attendance',
       appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      database: {
-        host: process.env.DB_HOST || 'localhost',
-        port: process.env.DB_PORT || '3306',
-        name: process.env.DB_NAME || 'daily_attendance',
-        user: process.env.DB_USER || 'root',
-      },
+      database: getDbConnectionInfo(),
       email: {
         host: process.env.EMAIL_HOST || 'smtp.mailtrap.io',
         port: process.env.EMAIL_PORT || '2525',

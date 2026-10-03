@@ -1,20 +1,54 @@
-## Menjalankan secara lokal
+# Daily Attendance
 
-Aplikasi ini menggunakan MySQL sebagai satu-satunya database. Pastikan layanan MySQL
-berjalan (misalnya melalui Laragon atau XAMPP), lalu:
+## Production deployment: Vercel + Railway MySQL
 
-1. Salin `.env.example` menjadi `.env`.
-2. Sesuaikan `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, dan `DB_NAME` dengan MySQL lokal.
-   Akun MySQL harus memiliki izin untuk membuat database dan tabel.
-3. Isi `JWT_SECRET` dan kredensial admin awal (`ADMIN_USERNAME`, `ADMIN_EMAIL`,
-   `ADMIN_PASSWORD`) di `.env`.
-4. Jalankan:
+- **Vercel** runs the complete Next.js app: the website and its `/api/*` route handlers.
+- **Railway** runs the MySQL database only.
+- The browser calls same-origin `/api/*` endpoints, so no separate API URL or CORS setup is needed.
 
-   ```bash
-   npm install
-   npm run dev
-   ```
+### Vercel setup
 
-Aplikasi tersedia di [http://localhost:3000](http://localhost:3000) dan akan membuat
-database serta tabel yang diperlukan pada koneksi pertama. Login dan data aplikasi
-tidak tersedia dalam mode demo tanpa MySQL.
+Import this repository into Vercel as a Next.js project and deploy the `main` branch.
+Vercel uses `npm run build` by default. In the Vercel project, open
+**Settings → Environment Variables** and add:
+
+| Variable | Value |
+| --- | --- |
+| `DATABASE_URL` | The Railway MySQL public connection URL, with the current rotated password |
+| `NEXT_PUBLIC_APP_URL` | The deployed website URL, such as `https://your-app.vercel.app` |
+| `JWT_SECRET` | A long, random secret unique to this deployment |
+| `JWT_EXPIRES_IN` | `7d` |
+| `NEXT_PUBLIC_APP_NAME` | `Daily Attendance` |
+| `ADMIN_USERNAME` | Initial admin username |
+| `ADMIN_EMAIL` | Initial admin email |
+| `ADMIN_PASSWORD` | A strong initial admin password |
+
+Add variables to the **Production** environment (and Preview/Development as needed),
+then redeploy. Keep `DATABASE_URL`, `JWT_SECRET`, and passwords server-side; never
+prefix them with `NEXT_PUBLIC_`. `NEXT_PUBLIC_APP_URL` is the website URL, not the
+MySQL URL.
+
+Use the Railway database's public host and port when connecting from Vercel. The
+database URL must name a database the Railway MySQL user can access. On first
+initialization, the application creates its database and tables, so the MySQL account
+must have permission to create databases. Set `NEXT_PUBLIC_APP_URL` to the production
+Vercel domain so password-reset email links point to the live app.
+
+The Railway `absentes` app service is not needed when Vercel runs the full Next.js
+application. Keep the Railway MySQL service running. Do not remove the app service
+until the Vercel deployment has been verified.
+
+## Local development
+
+Make a local `.env` file with MySQL connection settings (`DATABASE_URL`, or
+`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME`), plus the JWT and
+admin settings above. Do not commit `.env` or share its secrets.
+
+Make sure MySQL is reachable, then run:
+
+```bash
+npm install
+npm run dev
+```
+
+The app is available at [http://localhost:3000](http://localhost:3000).
