@@ -236,6 +236,11 @@ export async function testConnection(): Promise<{ connected: boolean; error?: st
     return { connected: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'MySQL connection failed. Ensure MySQL service is started (e.g., via Laragon or XAMPP).';
+    const code =
+      typeof err === 'object' && err !== null && 'code' in err && typeof err.code === 'string'
+        ? err.code
+        : 'UNKNOWN';
+    console.error(`[MySQL Connection Error] ${code}: ${message}`);
     return { connected: false, error: message };
   } finally {
     await connection?.end();

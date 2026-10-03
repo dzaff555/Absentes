@@ -28,9 +28,11 @@ then redeploy. Keep `DATABASE_URL`, `JWT_SECRET`, and passwords server-side; nev
 prefix them with `NEXT_PUBLIC_`. `NEXT_PUBLIC_APP_URL` is the website URL, not the
 MySQL URL.
 
-Set `DATABASE_URL` to the Railway MySQL public endpoint, with the database name
-`daily_attendance` as the final URL path. Use the actual Railway connection values
-and a newly rotated password; never commit this URL to Git. The app uses the database
+Set `DATABASE_URL` to the Railway MySQL **public TCP proxy** endpoint, with the
+database name `daily_attendance` as the final URL path. Use the public proxy host
+and port shown in Railway's MySQL service under **Settings → Networking → Public
+Networking**. Do not use a Railway private hostname when connecting from Vercel.
+Use a newly rotated password; never commit the URL to Git. The app uses the database
 name in the URL. On first initialization, it creates the database and tables if
 needed, so the MySQL account must have permission to create databases.
 Set `NEXT_PUBLIC_APP_URL` to the production Vercel domain so password-reset email
