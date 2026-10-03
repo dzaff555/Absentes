@@ -38,7 +38,7 @@ export default function AdminReportsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('ALL');
+  const [status, setStatus] = useState('Hadir');
   const [attendanceRole, setAttendanceRole] = useState('ALL');
 
   // Pagination & Loading
@@ -110,7 +110,7 @@ export default function AdminReportsPage() {
     setStartDate('');
     setEndDate('');
     setSearch('');
-    setStatus('ALL');
+    setStatus('Hadir');
     setAttendanceRole('ALL');
     setCurrentPage(1);
     setTimeout(() => {
@@ -200,7 +200,7 @@ export default function AdminReportsPage() {
         {/* Filter Controls Card */}
         <Card className="p-5">
           <form onSubmit={handleFilterSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Start Date */}
               <Input
                 type="date"
@@ -238,7 +238,6 @@ export default function AdminReportsPage() {
                   onChange={(e) => setStatus(e.target.value)}
                   className="w-full rounded-xl text-sm border border-slate-200 bg-white px-3.5 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                 >
-                  <option value="ALL">Semua Status</option>
                   <option value="Hadir">Hadir</option>
                   <option value="Belum Absen">Belum Absen</option>
                 </select>
