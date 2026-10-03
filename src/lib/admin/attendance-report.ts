@@ -1,6 +1,7 @@
 import { query } from '@/lib/database/db';
 import { ATTENDANCE_ROLES } from '@/types';
 import { getJakartaDateString } from '@/lib/utils/date';
+import { getLastCompletedAttendanceDate } from '@/lib/attendance/stats';
 
 export interface AttendanceReportFilters {
   startDate?: string;
@@ -93,8 +94,8 @@ function buildAttendanceReportQuery(filters: AttendanceReportFilters): Attendanc
       filters.startDate,
       filters.endDate
     );
-    const today = getJakartaDateString();
-    const effectiveEndDate = endDate < today ? endDate : today;
+    const lastCompletedDate = getLastCompletedAttendanceDate();
+    const effectiveEndDate = endDate < lastCompletedDate ? endDate : lastCompletedDate;
     empty = startDate > effectiveEndDate;
     if (empty) {
       return { withSql: '', fromSql: '', whereSql: '', params: [], empty };
@@ -124,7 +125,11 @@ function buildAttendanceReportQuery(filters: AttendanceReportFilters): Attendanc
       JOIN users u ON u.role = 'USER' AND u.status = 'ACTIVE'
       LEFT JOIN attendance a ON a.user_id = u.id AND a.attendance_date = d.report_date
     `;
-    whereConditions.push('a.id IS NULL', 'DATE(u.created_at) <= d.report_date');
+    whereConditions.push(
+      'a.id IS NULL',
+      'DAYOFWEEK(d.report_date) IN (1, 6, 7)',
+      '(DATE(u.created_at) < d.report_date OR (DATE(u.created_at) = d.report_date AND TIME(u.created_at) < \'18:00:00\'))'
+    );
   } else {
     fromSql = `
       FROM attendance a

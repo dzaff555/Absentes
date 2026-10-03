@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
 import { resolveAttendanceDateRange } from '@/lib/admin/attendance-report';
 import { getJakartaDateString } from '@/lib/utils/date';
+import { countWeekendDaysSince, getLastCompletedAttendanceDate } from '@/lib/attendance/stats';
 import { ATTENDANCE_ROLES } from '@/types';
 
 interface AttendanceStatisticsRecord {
@@ -12,6 +13,7 @@ interface AttendanceStatisticsRecord {
   profile_photo: string | null;
   created_at: string;
   attended_days: number;
+  completed_attended_days: number;
 }
 
 export async function GET(request: Request) {
@@ -66,44 +68,45 @@ export async function GET(request: Request) {
     const totalPages = Math.ceil(totalItems / limit) || 1;
 
     const today = getJakartaDateString();
-    const effectiveEndDate = endDate < today ? endDate : today;
+    const lastCompletedDate = getLastCompletedAttendanceDate();
+    const effectiveEndDate = endDate < lastCompletedDate ? endDate : lastCompletedDate;
+    const attendanceEndDate = endDate < today ? endDate : today;
     const records = await query<AttendanceStatisticsRecord[]>(
       `SELECT
         u.id,
         u.username,
         u.attendance_role,
         u.profile_photo,
-        DATE_FORMAT(u.created_at, '%Y-%m-%d') AS created_at,
-        COUNT(DISTINCT a.attendance_date) AS attended_days
+        DATE_FORMAT(u.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+        COUNT(DISTINCT a.attendance_date) AS attended_days,
+        COUNT(DISTINCT CASE WHEN a.attendance_date <= ? THEN a.attendance_date END) AS completed_attended_days
       FROM users u
       LEFT JOIN attendance a
         ON a.user_id = u.id
         AND a.attendance_date >= GREATEST(?, DATE(u.created_at))
         AND a.attendance_date <= ?
+        AND DAYOFWEEK(a.attendance_date) IN (1, 6, 7)
       WHERE ${whereSql}
       GROUP BY u.id, u.username, u.attendance_role, u.profile_photo, u.created_at
       ORDER BY u.username ASC
       LIMIT ? OFFSET ?`,
-      [startDate, effectiveEndDate, ...userParams, limit, offset]
+      [effectiveEndDate, startDate, attendanceEndDate, ...userParams, limit, offset]
     );
 
     const effectiveDays = records.map((record) => {
-      const eligibleStartDate =
-        record.created_at > startDate ? record.created_at : startDate;
       const expectedDays =
-        eligibleStartDate <= effectiveEndDate
-          ? Math.floor(
-              (Date.parse(`${effectiveEndDate}T00:00:00.000Z`) -
-                Date.parse(`${eligibleStartDate}T00:00:00.000Z`)) /
-                86_400_000
-            ) + 1
+        startDate <= effectiveEndDate
+          ? countWeekendDaysSince(record.created_at, effectiveEndDate, startDate)
           : 0;
-      const attendedDays = Math.min(Number(record.attended_days || 0), expectedDays);
+      const completedAttendedDays = Math.min(
+        Number(record.completed_attended_days || 0),
+        expectedDays
+      );
 
       return {
         ...record,
-        attended_days: attendedDays,
-        absent_days: Math.max(0, expectedDays - attendedDays),
+        attended_days: Number(record.attended_days || 0),
+        absent_days: Math.max(0, expectedDays - completedAttendedDays),
       };
     });
 

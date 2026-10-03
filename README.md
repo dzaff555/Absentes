@@ -50,7 +50,8 @@ first-login profile completion; they can update it later from their own profile.
 Staff profiles count attendance records marked `Hadir`, missed Friday–Sunday
 attendance days after each attendance window closes at 18.00 WIB (a same-day
 account created at or after closing is not counted for that day), and recorded
-admin warnings. Admins can add a warning with a
+admin warnings. Attendance statistics and reports use the same completed
+Friday–Sunday attendance-window rule for absence counts. Admins can add a warning with a
 required reason from the account profile; warning records are created automatically
 when the app initializes the database.
 Admins also receive inbox notifications when a user records a new attendance;

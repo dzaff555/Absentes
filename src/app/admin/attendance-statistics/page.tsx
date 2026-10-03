@@ -88,8 +88,8 @@ export default function AdminAttendanceStatisticsPage() {
             Attendance Statistics
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Attendance and absence counts per active account. Absences count calendar days
-            from the account creation date through today.
+            Attendance is counted when recorded. An absence is counted only for a Friday–Sunday
+            attendance window after it closes at 18.00 WIB, starting after the account is created.
           </p>
         </div>
 
@@ -170,7 +170,7 @@ export default function AdminAttendanceStatisticsPage() {
                       <th className="px-4 py-3.5">Account</th>
                       <th className="px-4 py-3.5">Attendance role</th>
                       <th className="px-4 py-3.5 text-center">Attended</th>
-                      <th className="px-4 py-3.5 text-center">Did not attend</th>
+                      <th className="px-4 py-3.5 text-center">Absences (closed windows)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -222,7 +222,7 @@ export default function AdminAttendanceStatisticsPage() {
             />
             <p className="text-xs text-slate-500">
               Period: {formatIndonesianDate(startDate)} – {formatIndonesianDate(endDate)}.
-              Future calendar days are not counted as absences.
+              Only Friday–Sunday windows closed at 18.00 WIB count as absences.
             </p>
           </div>
         )}

@@ -278,7 +278,7 @@ export default function AdminReportsPage() {
           <EmptyState
             title="Tidak Ada Laporan Ditemukan"
             description={status === 'Belum Absen'
-              ? 'Tidak ditemukan akun aktif yang belum absen pada tanggal atau periode tersebut.'
+              ? 'Tidak ditemukan akun aktif yang melewatkan jendela absensi Jumat–Minggu yang sudah ditutup pukul 18.00 WIB pada periode tersebut.'
               : 'Tidak ada catatan absensi yang sesuai dengan rentang tanggal atau kriteria filter yang Anda tentukan.'}
             actionLabel="Reset Filter"
             onAction={handleResetFilters}
