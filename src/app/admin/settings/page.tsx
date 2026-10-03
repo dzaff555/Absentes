@@ -6,18 +6,14 @@ import {
   KeyRound,
   Save,
 } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { AuthSession } from '@/types';
 
 export default function AdminSettingsPage() {
   const toast = useToast();
-  const [currentUser, setCurrentUser] = useState<AuthSession | null>(null);
-
   // Profile edit states
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -29,12 +25,6 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setCurrentUser(data.data);
-      });
-
     loadSettings();
   }, []);
 
@@ -94,7 +84,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <AppLayout user={currentUser}>
+    <>
       <div className="space-y-8 max-w-4xl">
         {/* Page Header */}
         <div>
@@ -189,6 +179,6 @@ export default function AdminSettingsPage() {
         </Card>
 
       </div>
-    </AppLayout>
+    </>
   );
 }

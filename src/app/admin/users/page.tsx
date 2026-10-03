@@ -12,7 +12,6 @@ import {
   Copy,
   UserPlus,
 } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -293,7 +292,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <AppLayout user={currentUser}>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -770,6 +769,6 @@ export default function AdminUsersPage() {
           </Modal>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

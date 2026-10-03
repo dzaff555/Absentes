@@ -238,28 +238,6 @@ export function Sidebar({
             )}
         </div>
 
-        {/* Role Switcher link if Admin wants to view User dashboard */}
-        {isAdmin && (
-          <>
-            <div className="pt-4 pb-2">
-              <div className="border-t border-white/10 my-2" />
-              {!collapsed && (
-                <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  User View
-                </div>
-              )}
-            </div>
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all"
-              title={collapsed ? 'Open staff view' : undefined}
-            >
-              <UserCheck className="w-5 h-5 text-slate-400 shrink-0" />
-              {!collapsed && <span>Staff View</span>}
-            </Link>
-          </>
-        )}
       </div>
 
       {/* User Info & Logout Footer */}

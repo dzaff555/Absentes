@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft, CalendarDays, ShieldCheck, UserRound } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { getSessionUser } from '@/lib/auth/auth';
 import { query } from '@/lib/database/db';
 import { formatIndonesianDate } from '@/lib/utils/date';
@@ -48,7 +47,7 @@ export default async function AdminStaffProfilePage({
   if (!staff) notFound();
 
   return (
-    <AppLayout user={session}>
+    <>
       <div className="mx-auto max-w-3xl space-y-6">
         <Link
           href="/admin/users"
@@ -120,6 +119,6 @@ export default async function AdminStaffProfilePage({
         </section>
 
       </div>
-    </AppLayout>
+    </>
   );
 }

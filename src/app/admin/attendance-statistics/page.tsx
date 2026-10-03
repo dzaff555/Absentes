@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Calendar, CheckCircle2, Search, UserX } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +10,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { TableSkeleton } from '@/components/ui/LoadingSkeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { getJakartaDateString, formatIndonesianDate } from '@/lib/utils/date';
-import { ATTENDANCE_ROLES, AuthSession } from '@/types';
+import { ATTENDANCE_ROLES } from '@/types';
 import { useToast } from '@/components/ui/Toast';
 
 interface AttendanceStatisticsRecord {
@@ -25,7 +24,6 @@ interface AttendanceStatisticsRecord {
 
 export default function AdminAttendanceStatisticsPage() {
   const toast = useToast();
-  const [user, setUser] = useState<AuthSession | null>(null);
   const [records, setRecords] = useState<AttendanceStatisticsRecord[]>([]);
   const [startDate, setStartDate] = useState(() => getJakartaDateString());
   const [endDate, setEndDate] = useState(() => getJakartaDateString());
@@ -36,17 +34,6 @@ export default function AdminAttendanceStatisticsPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [requestVersion, setRequestVersion] = useState(0);
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) setUser(data.data);
-      })
-      .catch((error: unknown) => {
-        console.error('Failed to load current user:', error);
-      });
-  }, []);
 
   const fetchStatistics = useCallback(async () => {
     setIsLoading(true);
@@ -94,7 +81,7 @@ export default function AdminAttendanceStatisticsPage() {
   };
 
   return (
-    <AppLayout user={user}>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
@@ -240,6 +227,6 @@ export default function AdminAttendanceStatisticsPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }

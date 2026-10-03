@@ -52,7 +52,14 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    // If admin visits /dashboard directly, they can view it or redirect to /admin/dashboard
+    if (
+      session.role === 'ADMIN' &&
+      (pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/attendance') ||
+        pathname.startsWith('/complete-profile'))
+    ) {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
   }
 
   return NextResponse.next();

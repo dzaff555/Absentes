@@ -18,7 +18,6 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import Link from 'next/link';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -30,10 +29,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { AttendanceBarChart } from '@/components/charts/AttendanceBarChart';
 import { AttendanceDonutChart } from '@/components/charts/AttendanceDonutChart';
 import { formatIndonesianDate, formatIndonesianTime } from '@/lib/utils/date';
-import { DashboardStats, AuthSession } from '@/types';
+import { DashboardStats } from '@/types';
 
 export default function AdminDashboardPage() {
-  const [user, setUser] = useState<AuthSession | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [todayDateStr, setTodayDateStr] = useState<string>('');
@@ -48,15 +46,6 @@ export default function AdminDashboardPage() {
 
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingTable, setIsLoadingTable] = useState(true);
-
-  // Fetch Session
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setUser(data.data);
-      });
-  }, []);
 
   // Fetch Dashboard Statistics
   const loadStats = async () => {
@@ -115,7 +104,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <AppLayout user={user}>
+    <>
       <div className="space-y-8">
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0F2747] via-[#122B4F] to-[#1E40AF] p-6 sm:p-8 md:p-10 text-white shadow-xl shadow-blue-950/20">
@@ -551,6 +540,6 @@ export default function AdminDashboardPage() {
           )}
         </Modal>
       </div>
-    </AppLayout>
+    </>
   );
 }

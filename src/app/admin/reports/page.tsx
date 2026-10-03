@@ -2,7 +2,6 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { Search, Calendar, Download, FileSpreadsheet, RefreshCw, Filter } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +10,7 @@ import { Pagination } from '@/components/ui/Pagination';
 import { TableSkeleton } from '@/components/ui/LoadingSkeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatIndonesianDate, formatIndonesianTime } from '@/lib/utils/date';
-import { ATTENDANCE_ROLES, AuthSession } from '@/types';
+import { ATTENDANCE_ROLES } from '@/types';
 import { useToast } from '@/components/ui/Toast';
 
 type AttendanceReportRecord = {
@@ -31,7 +30,6 @@ type AttendanceReportRecord = {
 
 export default function AdminReportsPage() {
   const toast = useToast();
-  const [user, setUser] = useState<AuthSession | null>(null);
   const [records, setRecords] = useState<AttendanceReportRecord[]>([]);
 
   // Filter criteria
@@ -47,15 +45,6 @@ export default function AdminReportsPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
-
-  // Fetch session
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setUser(data.data);
-      });
-  }, []);
 
   const fetchReports = useCallback(async () => {
     setIsLoading(true);
@@ -163,7 +152,7 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <AppLayout user={user}>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -376,6 +365,6 @@ export default function AdminReportsPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </>
   );
 }
